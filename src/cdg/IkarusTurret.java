@@ -228,9 +228,10 @@ public class IkarusTurret implements IEntity {
 	public void tick() 
 	{
 		Vertex2 mp = Utility.mouseTo2DGL(Mouse.getX(), Mouse.getY(), StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
-		float dx = mp.getX() - (this.xway);
+		float dx = mp.getX() - (this.xway*(1.0f/StaticManager.ASPECT_RATIO));
 		float dy = mp.getY() - (this.yway);
-		this.turnDeg = (float)(Math.atan2(dx * (StaticManager.ASPECT_RATIO), dy) * (180/Math.PI));
+		
+		this.deg = (float)(Math.atan2(dx * (StaticManager.ASPECT_RATIO), dy) * (180/Math.PI))-90.0f;
 		
 		this.ikarusRotationMatrix = new Matrix4x4((float) Math.cos(Utility.degToRad(deg)), (float) Math.sin(Utility.degToRad(deg))*-1.0f, 0.0f, 0.0f,
 											(float) Math.sin(Utility.degToRad(deg)), (float) Math.cos(Utility.degToRad(deg)), 0.0f, 0.0f,

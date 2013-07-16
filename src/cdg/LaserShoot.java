@@ -64,7 +64,7 @@ public class LaserShoot implements IEntity {
 		this.y = y;
 		this.width = 0.02f;
 		this.height = 0.06f;
-		this.texID = Utility.loadPNGTexture("res\\textures\\shoot.png", GL13.GL_TEXTURE0);
+		this.texID = Utility.loadPNGTexture("res\\textures\\shoot_ee.png", GL13.GL_TEXTURE0);
 		setupGL();
 		loadShader();
 		

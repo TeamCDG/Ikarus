@@ -193,7 +193,7 @@ public class Main implements IGameControl{
 								StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
 						ikarus.shoot(mGL.getX(), mGL.getY());
 					}
-				}  
+				}
 			}
 			*/
 		}
@@ -204,10 +204,8 @@ public class Main implements IGameControl{
 				  StaticManager.CLEAR_COLOR[3]);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);	
 		
-		
-		GL20.glUseProgram(StaticManager.MENU_SHADER_PROGRAM_ID);
-		
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, StaticManager.MAIN_MENU_BACKGROUND_TEXTURE_ID);
+		GL20.glUseProgram(StaticManager.MENU_SHADER_PROGRAM_ID);
 		
 		GL30.glBindVertexArray(this.backgroundVAO);
 		GL20.glEnableVertexAttribArray(0);
@@ -221,8 +219,10 @@ public class Main implements IGameControl{
 		mat.put(new Matrix4x4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f).toArray());
 		mat.flip();
 			
+		
 		GL20.glUniform1i(GL20.glGetUniformLocation(StaticManager.MENU_SHADER_PROGRAM_ID, "texture_font"), 0);
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(StaticManager.MENU_SHADER_PROGRAM_ID, "windowMatrix"), false, mat);
+		GL20.glUniformMatrix4(GL20.glGetUniformLocation(StaticManager.MENU_SHADER_PROGRAM_ID, "windowMatrix"), false, mat);		
+		GL20.glUniform1i(GL20.glGetUniformLocation(StaticManager.MENU_SHADER_PROGRAM_ID, "state"), 0);
 		
 		// Draw the vertices
 		GL11.glDrawElements(GL11.GL_TRIANGLES, 6, GL11.GL_UNSIGNED_BYTE, 0);

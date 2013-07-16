@@ -44,7 +44,7 @@ public class Ikarus implements IEntity, IKeyboardListener {
 	private int rML;
 	private IMatrix rotationMatrix;
 	private int shaderID;
-	private float deg = -90;
+	private float deg = 0.0f;
 	private float turnRate = 0.04f;
 	private float moveRate = 0.0002f;
 	private float shieldLevel;
@@ -69,7 +69,7 @@ public class Ikarus implements IEntity, IKeyboardListener {
 		this.y = 0;
 		this.width = 0.6f;
 		this.height = 0.3f;
-		this.texID = Utility.loadPNGTexture("res\\textures\\ship.png", GL13.GL_TEXTURE0);
+		this.texID = Utility.loadPNGTexture("res\\textures\\karpfen.png", GL13.GL_TEXTURE0);
 		setupGL();
 		loadShader();
 		this.shieldLevel = 1.0f;
@@ -396,10 +396,10 @@ public class Ikarus implements IEntity, IKeyboardListener {
 
 	public void shoot(float x, float y) 
 	{
-		if(true || this.reload <= 0)
+		if(this.reload <= 0)
 		{
 			this.aviableShoots--;
-			float dx = x - (this.xway);
+			float dx = (x) - (this.xway*(1.0f/StaticManager.ASPECT_RATIO));
 			float dy = y - (this.yway);
 			float w = (float)(Math.atan2(dx * (StaticManager.ASPECT_RATIO), dy) * (180/Math.PI));
 			StaticManager.shoots.add(new LaserShoot(this, 0.0f, 0.0f, this.xway, this.yway, w+10.0f*new Random().nextFloat()-5.0f, 0.5f));

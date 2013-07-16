@@ -72,7 +72,7 @@ public class RiBracu implements IEntity {
 		//this.xway = new Random().nextFloat()*2-1;
 		this.yway = new Random().nextFloat()*2-1;
 		this.deg = new Random().nextInt(360);
-		this.texID = Utility.loadPNGTexture("res\\textures\\ribracu_shield.png", GL13.GL_TEXTURE0);
+		this.texID = Utility.loadPNGTexture("res\\textures\\rochen.png", GL13.GL_TEXTURE0);
 		setupGL();
 		loadShader();
 		this.shieldLevel = 1.0f;
@@ -274,7 +274,7 @@ public class RiBracu implements IEntity {
 		if(new Random().nextInt(20) == 15 && !this.turnLocked)
 			this.targetDeg = new Random().nextInt(360);
 		
-		if(new Random().nextInt(16) == 15 && !this.turnLocked)
+		if(new Random().nextInt(500) == 15 && !this.turnLocked)
 		{
 			StaticManager.shoots.add(new LaserShoot(this, 0.085f, 0.12f, this.xway, this.yway, deg, 0.75f));
 			StaticManager.shoots.add(new LaserShoot(this, -0.09f, 0.12f, this.xway, this.yway, deg, 0.75f));
