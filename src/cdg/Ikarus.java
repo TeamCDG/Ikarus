@@ -69,7 +69,7 @@ public class Ikarus implements IEntity, IKeyboardListener {
 		this.y = 0;
 		this.width = 0.6f;
 		this.height = 0.3f;
-		this.texID = Utility.loadPNGTexture("res\\textures\\karpfen.png", GL13.GL_TEXTURE0);
+		this.texID = Utility.loadPNGTexture("res\\textures\\ship.png", GL13.GL_TEXTURE0);
 		setupGL();
 		loadShader();
 		this.shieldLevel = 1.0f;

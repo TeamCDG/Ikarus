@@ -72,7 +72,7 @@ public class RiBracu implements IEntity {
 		//this.xway = new Random().nextFloat()*2-1;
 		this.yway = new Random().nextFloat()*2-1;
 		this.deg = new Random().nextInt(360);
-		this.texID = Utility.loadPNGTexture("res\\textures\\rochen.png", GL13.GL_TEXTURE0);
+		this.texID = Utility.loadPNGTexture("res\\textures\\ribracu_shield.png", GL13.GL_TEXTURE0);
 		setupGL();
 		loadShader();
 		this.shieldLevel = 1.0f;
