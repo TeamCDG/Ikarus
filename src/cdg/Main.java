@@ -1,5 +1,6 @@
 package cdg;
 
+
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
@@ -45,13 +46,303 @@ import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
 public class Main implements IGameControl{
 
+	// Setup variables
+	private final String WINDOW_TITLE = "The Quad: Textured";
+	// Quad variables
+	private int vaoId = 0;
+	private int vboId = 0;
+	private int vboiId = 0;
+	private int indicesCount = 0;
+	// Shader variables
+	private int vsId = 0;
+	private int fsId = 0;
+	private int pId = 0;
+		
 	private long lastFrame;
 	private int lastKey;
 	private ArrayList<IKeyboardListener> keyboardListener = new ArrayList<IKeyboardListener>();
 	private double delta;
-	/**
-	 * @param args
-	 */
+	private Ikarus ikarus;
+	private int backgroundVAO = -1;
+	private int backgroundVBO = -1;
+	private int backgroundIndiciesVBO = -1;
+	@Override
+	public double getDelta() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void showMainMenu() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void showCredits() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	public static void main(String[] args) {
+		new Main();
+	}
+	
+	public Main() {
+		// Initialize OpenGL (Display)
+		this.setupOpenGL();
+		
+		this.setupQuad();
+		this.setupShaders();
+		this.setupTextures();
+		
+		this.loadCursor();
+		while (!Display.isCloseRequested()) {
+			// Do a single loop (logic/render)
+			this.loopCycle();
+			
+			// Force a maximum FPS of about 60
+			Display.sync(60);
+			// Let the CPU synchronize with the GPU if GPU is tagging behind
+			Display.update();
+		}
+		
+		// Destroy OpenGL (Display)
+		this.destroyOpenGL();
+	}
+	
+	@SuppressWarnings("unused")
+	private void loadCursor()
+	{
+		Image c=Toolkit.getDefaultToolkit().getImage("res\\textures\\cross.png");
+	    BufferedImage biCursor=new BufferedImage(16,16,BufferedImage.TYPE_INT_ARGB);
+	    while(!biCursor.createGraphics().drawImage(c,0,15,15,0,0,0,15,15,null))
+	      try
+	      {
+	        Thread.sleep(5);
+	      }
+	      catch(InterruptedException e)
+	      {
+	      }
+	    
+	    int[] data=biCursor.getRaster().getPixels(0,0,16,16,(int[])null);
+	    
+	    IntBuffer ib=BufferUtils.createIntBuffer(16*16);
+	    for(int i=0;i<data.length;i+=4)
+	      ib.put(data[i] | data[i+1]<<8 | data[i+2]<<16 | data[i+3]<<24);
+	    ib.flip();
+		try {
+			Mouse.setNativeCursor(new Cursor(16, 16, 8, 8, 1, ib, null));
+		} catch (LWJGLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void setupTextures() {
+		StaticManager.MAIN_MENU_BACKGROUND_TEXTURE_ID = Utility.loadPNGTexture("res/textures/background.png", GL13.GL_TEXTURE0);
+		
+		this.exitOnGLError("setupTexture");
+	}
+
+	private void setupOpenGL() {
+		// Setup an OpenGL context with API version 3.2
+		try {
+			PixelFormat pixelFormat = new PixelFormat();
+			ContextAttribs contextAtrributes = new ContextAttribs(3, 2)
+				.withForwardCompatible(true)
+				.withProfileCore(true);
+			
+			Display.setDisplayMode(new DisplayMode(StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT));
+			Display.setTitle(WINDOW_TITLE);
+			Display.create(pixelFormat, contextAtrributes);
+			
+			GL11.glViewport(0, 0, StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
+		} catch (LWJGLException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+		
+		// Setup an XNA like background color
+		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
+		
+		// Map the internal OpenGL coordinate system to the entire screen
+		GL11.glViewport(0, 0, StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
+		
+		this.exitOnGLError("setupOpenGL");
+	}
+	
+	private void setupQuad() {
+		
+		VertexData[] points = new VertexData[]{new VertexData(new float[]{-1.0f,1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{0.0f,0.0f}),
+				   new VertexData(new float[]{-1.0f,-1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{0.0f,1.0f}),
+				   new VertexData(new float[]{1.0f,-1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{1.0f,1.0f}),
+				   new VertexData(new float[]{1.0f,1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{1.0f,0.0f})};
+		// Put each 'Vertex' in one FloatBuffer
+		FloatBuffer verticesBuffer = BufferUtils.createFloatBuffer(points.length *
+				VertexData.ELEMENT_COUNT);
+		for (int i = 0; i < points.length; i++) {
+			// Add position, color and texture floats to the buffer
+			verticesBuffer.put(points[i].getElements());
+		}
+		verticesBuffer.flip();	
+		// OpenGL expects to draw vertices in counter clockwise order by default
+		byte[] indices = {
+				0, 1, 2,
+				2, 3, 0
+		};
+		indicesCount = indices.length;
+		ByteBuffer indicesBuffer = BufferUtils.createByteBuffer(indicesCount);
+		indicesBuffer.put(indices);
+		indicesBuffer.flip();
+		
+		// Create a new Vertex Array Object in memory and select it (bind)
+		vaoId = GL30.glGenVertexArrays();
+		GL30.glBindVertexArray(vaoId);
+		
+		// Create a new Vertex Buffer Object in memory and select it (bind)
+		vboId = GL15.glGenBuffers();
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesBuffer, GL15.GL_STATIC_DRAW);
+		
+		// Put the position coordinates in attribute list 0
+		GL20.glVertexAttribPointer(0, VertexData.POSITION_ELEMENT_COUNT, GL11.GL_FLOAT, 
+				false, VertexData.STRIDE, VertexData.POSITION_BYTE_OFFSET);
+		// Put the color components in attribute list 1
+		GL20.glVertexAttribPointer(1, VertexData.COLOR_ELEMENT_COUNT, GL11.GL_FLOAT, 
+				false, VertexData.STRIDE, VertexData.COLOR_BYTE_OFFSET);
+		// Put the texture coordinates in attribute list 2
+		GL20.glVertexAttribPointer(2, VertexData.COLOR_ELEMENT_COUNT, GL11.GL_FLOAT, 
+				false, VertexData.STRIDE, VertexData.TEXTURE_BYTE_OFFSET);
+		
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+		
+		// Deselect (bind to 0) the VAO
+		GL30.glBindVertexArray(0);
+		
+		// Create a new VBO for the indices and select it (bind) - INDICES
+		vboiId = GL15.glGenBuffers();
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
+		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL15.GL_STATIC_DRAW);
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+		
+		this.exitOnGLError("setupQuad");
+	}
+	
+	private void setupShaders() {		
+		// Load the vertex shader
+		vsId = Utility.loadShader("res\\shader\\menuRenderVertex.glsl", GL20.GL_VERTEX_SHADER);
+		// Load the fragment shader
+		fsId = Utility.loadShader("res\\shader\\menuRenderFragment.glsl", GL20.GL_FRAGMENT_SHADER);
+		
+		// Create a new shader program that links both shaders
+		pId = GL20.glCreateProgram();
+		GL20.glAttachShader(pId, vsId);
+		GL20.glAttachShader(pId, fsId);
+
+		// Position information will be attribute 0
+		GL20.glBindAttribLocation(pId, 0, "in_Position");
+		// Color information will be attribute 1
+		GL20.glBindAttribLocation(pId, 1, "in_Color");
+		// Textute information will be attribute 2
+		GL20.glBindAttribLocation(pId, 2, "in_TextureCoord");
+		
+		GL20.glLinkProgram(pId);
+		GL20.glValidateProgram(pId);
+		
+		this.exitOnGLError("setupShaders");
+	}
+	
+	private void loopCycle() {
+		
+		// Render
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+		
+		GL20.glUseProgram(pId);
+		
+		// Bind the texture
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, StaticManager.MAIN_MENU_BACKGROUND_TEXTURE_ID);
+		
+		// Bind to the VAO that has all the information about the vertices
+		GL30.glBindVertexArray(vaoId);
+		GL20.glEnableVertexAttribArray(0);
+		GL20.glEnableVertexAttribArray(1);
+		GL20.glEnableVertexAttribArray(2);
+		
+		// Bind to the index VBO that has all the information about the order of the vertices
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
+		
+		// Draw the vertices
+		GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount, GL11.GL_UNSIGNED_BYTE, 0);
+		
+		// Put everything back to default (deselect)
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+		GL20.glDisableVertexAttribArray(0);
+		GL20.glDisableVertexAttribArray(1);
+		GL20.glDisableVertexAttribArray(2);
+		GL30.glBindVertexArray(0);
+		
+		GL20.glUseProgram(0);
+		
+		this.exitOnGLError("loopCycle");
+	}
+	
+	private void destroyOpenGL() {	
+		// Delete the texture
+		GL11.glDeleteTextures(StaticManager.MAIN_MENU_BACKGROUND_TEXTURE_ID);
+		
+		// Delete the shaders
+		GL20.glUseProgram(0);
+		GL20.glDetachShader(pId, vsId);
+		GL20.glDetachShader(pId, fsId);
+		
+		GL20.glDeleteShader(vsId);
+		GL20.glDeleteShader(fsId);
+		GL20.glDeleteProgram(pId);
+		
+		// Select the VAO
+		GL30.glBindVertexArray(vaoId);
+		
+		// Disable the VBO index from the VAO attributes list
+		GL20.glDisableVertexAttribArray(0);
+		GL20.glDisableVertexAttribArray(1);
+		
+		// Delete the vertex VBO
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+		GL15.glDeleteBuffers(vboId);
+		
+		// Delete the index VBO
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+		GL15.glDeleteBuffers(vboiId);
+		
+		// Delete the VAO
+		GL30.glBindVertexArray(0);
+		GL30.glDeleteVertexArrays(vaoId);
+		
+		this.exitOnGLError("destroyOpenGL");
+		
+		Display.destroy();
+	}
+	
+	
+	private void exitOnGLError(String errorMessage) {
+		int errorValue = GL11.glGetError();
+		
+		if (errorValue != GL11.GL_NO_ERROR) {
+			String errorString = GLU.gluErrorString(errorValue);
+			System.err.println("ERROR - " + errorMessage + ": " + errorString);
+			
+			if (Display.isCreated()) Display.destroy();
+			System.exit(-1);
+		}
+	}
+
+	/*
+	private long lastFrame;
+	private int lastKey;
+	private ArrayList<IKeyboardListener> keyboardListener = new ArrayList<IKeyboardListener>();
+	private double delta;
 	private Ikarus ikarus;
 	private int backgroundVAO = -1;
 	private int backgroundVBO = -1;
@@ -161,16 +452,6 @@ public class Main implements IGameControl{
 			this.lastKey = Keyboard.getEventKey();
 		}
 		
-		/*
-		ikarus.tick();
-		for(int i = 0; i < 10; i++)
-			fighter[i].tick();
-		ikarus.draw();
-		for(int i = 0; i < 10; i++)
-			fighter[i].draw();
-		
-			*/
-		
 		Mouse.poll();
 		if(Mouse.isButtonDown(0))
 		{
@@ -179,23 +460,6 @@ public class Main implements IGameControl{
 			Vertex2 mGL = Utility.mouseTo2DGL(Mouse.getX(), Mouse.getY(), 
 					StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
 			ikarus.shoot(mGL.getX(), mGL.getY());
-			/*
-			ByteBuffer pixel = ByteBuffer.allocateDirect(16);
-			GL11.glReadPixels(Mouse.getX(), Mouse.getY(), 1, 1, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, pixel);
-			int gotId = Utility.glColorToId(new byte[]{pixel.get(0),pixel.get(1),pixel.get(2),pixel.get(3)}, false);
-			if(gotId != 0)
-			{
-				for(int i = 0; i < StaticManager.objects.size(); i++)
-				{
-					if(StaticManager.objects.get(i).getId() == gotId)
-					{
-						Vertex2 mGL = Utility.mouseTo2DGL(Mouse.getX(), Mouse.getY(), 
-								StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
-						ikarus.shoot(mGL.getX(), mGL.getY());
-					}
-				}
-			}
-			*/
 		}
 		
 		GL11.glClearColor(StaticManager.CLEAR_COLOR[0], 
@@ -464,5 +728,6 @@ public class Main implements IGameControl{
 	{
 		
 	}
+	*/
 
 }

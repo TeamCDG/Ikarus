@@ -18,7 +18,7 @@ out vec2 pass_TextureCoord;
 
 void main(void) {
 
-	gl_Position = windowMatrix * in_Position;
+	gl_Position = in_Position;
 	
 	pass_TextureCoord = in_TextureCoord;
 	pass_Color = in_Color;
