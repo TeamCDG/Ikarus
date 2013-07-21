@@ -15,6 +15,7 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Random;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -49,9 +50,6 @@ public class Main implements IGameControl{
 	// Setup variables
 	private final String WINDOW_TITLE = "The Quad: Textured";
 	// Quad variables
-	private int vaoId = 0;
-	private int vboId = 0;
-	private int vboiId = 0;
 	private int indicesCount = 0;
 	// Shader variables
 	private int vsId = 0;
@@ -61,11 +59,13 @@ public class Main implements IGameControl{
 	private long lastFrame;
 	private int lastKey;
 	private ArrayList<IKeyboardListener> keyboardListener = new ArrayList<IKeyboardListener>();
-	private double delta;
-	private Ikarus ikarus;
 	private int backgroundVAO = -1;
 	private int backgroundVBO = -1;
 	private int backgroundIndiciesVBO = -1;
+	
+	private int roidCount = 100;
+	private Roid[] roids;
+	
 	@Override
 	public double getDelta() {
 		// TODO Auto-generated method stub
@@ -94,10 +94,31 @@ public class Main implements IGameControl{
 		
 		this.setupQuad();
 		this.setupShaders();
+		
+		
+		
+		//StaticManager.DEFAULT_SHADER = new ShaderProgram("res/shader/default.vert", "res/shader/default.frag");
+		
 		this.setupTextures();
+		
+		
+		roids = new Roid[roidCount];
+		
+		Roid.ROID_SHADER = new ShaderProgram("res/shader/roid.vert", "res/shader/roid.frag");
+		Roid.ROID_TEXTURE_ID =  Utility.loadPNGTexture("res/textures/testroid.png", GL13.GL_TEXTURE0);
+		
+		for(int i = 0; i < roidCount; i++)
+		{
+			float roidSize = new Random().nextFloat()*0.2f;
+			roids[i] = new Roid(i, ((new Random().nextFloat()-0.5f)*2.0f)*StaticManager.ASPECT_RATIO, (new Random().nextFloat()-0.5f)*2.0f, roidSize, roidSize);
+			//roids[i] = new Roid(i, 0.5f, 0.5f, 0.2f, 0.2f);
+		}
+		this.exitOnGLError("setupRoids");
 		
 		this.loadCursor();
 		while (!Display.isCloseRequested()) {
+			
+			StaticManager.delta = (float) this.calculateDelta();
 			// Do a single loop (logic/render)
 			this.loopCycle();
 			
@@ -197,12 +218,12 @@ public class Main implements IGameControl{
 		indicesBuffer.flip();
 		
 		// Create a new Vertex Array Object in memory and select it (bind)
-		vaoId = GL30.glGenVertexArrays();
-		GL30.glBindVertexArray(vaoId);
+		backgroundVAO = GL30.glGenVertexArrays();
+		GL30.glBindVertexArray(backgroundVAO);
 		
 		// Create a new Vertex Buffer Object in memory and select it (bind)
-		vboId = GL15.glGenBuffers();
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+		backgroundVBO = GL15.glGenBuffers();
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, backgroundVBO);
 		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesBuffer, GL15.GL_STATIC_DRAW);
 		
 		// Put the position coordinates in attribute list 0
@@ -221,8 +242,8 @@ public class Main implements IGameControl{
 		GL30.glBindVertexArray(0);
 		
 		// Create a new VBO for the indices and select it (bind) - INDICES
-		vboiId = GL15.glGenBuffers();
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
+		backgroundIndiciesVBO = GL15.glGenBuffers();
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, backgroundIndiciesVBO);
 		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL15.GL_STATIC_DRAW);
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 		
@@ -231,9 +252,9 @@ public class Main implements IGameControl{
 	
 	private void setupShaders() {		
 		// Load the vertex shader
-		vsId = Utility.loadShader("res\\shader\\menuRenderVertex.glsl", GL20.GL_VERTEX_SHADER);
+		vsId = Utility.loadShader("res\\shader\\background.vert", GL20.GL_VERTEX_SHADER);
 		// Load the fragment shader
-		fsId = Utility.loadShader("res\\shader\\menuRenderFragment.glsl", GL20.GL_FRAGMENT_SHADER);
+		fsId = Utility.loadShader("res\\shader\\background.frag", GL20.GL_FRAGMENT_SHADER);
 		
 		// Create a new shader program that links both shaders
 		pId = GL20.glCreateProgram();
@@ -258,6 +279,7 @@ public class Main implements IGameControl{
 		// Render
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 		
+		
 		GL20.glUseProgram(pId);
 		
 		// Bind the texture
@@ -265,14 +287,19 @@ public class Main implements IGameControl{
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, StaticManager.MAIN_MENU_BACKGROUND_TEXTURE_ID);
 		
 		// Bind to the VAO that has all the information about the vertices
-		GL30.glBindVertexArray(vaoId);
+		GL30.glBindVertexArray(backgroundVAO);
 		GL20.glEnableVertexAttribArray(0);
 		GL20.glEnableVertexAttribArray(1);
 		GL20.glEnableVertexAttribArray(2);
 		
 		// Bind to the index VBO that has all the information about the order of the vertices
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, backgroundIndiciesVBO);
+		FloatBuffer mat = BufferUtils.createFloatBuffer(16);
 		
+		mat.put(new Matrix4x4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f).toArray());
+		mat.flip();
+			
+		GL20.glUniformMatrix4(GL20.glGetUniformLocation(pId, "window_Matrix"), false, mat);	
 		// Draw the vertices
 		GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount, GL11.GL_UNSIGNED_BYTE, 0);
 		
@@ -283,7 +310,23 @@ public class Main implements IGameControl{
 		GL20.glDisableVertexAttribArray(2);
 		GL30.glBindVertexArray(0);
 		
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+		
 		GL20.glUseProgram(0);
+		
+		GL11.glEnable(GL11.GL_BLEND);
+		
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		
+		for(int i = 0; i < roidCount; i++)
+		{
+			roids[i].doTick();
+		}
+		
+		for(int i = 0; i < roidCount; i++)
+		{
+			roids[i].draw();
+		}
 		
 		this.exitOnGLError("loopCycle");
 	}
@@ -302,7 +345,7 @@ public class Main implements IGameControl{
 		GL20.glDeleteProgram(pId);
 		
 		// Select the VAO
-		GL30.glBindVertexArray(vaoId);
+		GL30.glBindVertexArray(backgroundVAO);
 		
 		// Disable the VBO index from the VAO attributes list
 		GL20.glDisableVertexAttribArray(0);
@@ -310,15 +353,15 @@ public class Main implements IGameControl{
 		
 		// Delete the vertex VBO
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-		GL15.glDeleteBuffers(vboId);
+		GL15.glDeleteBuffers(backgroundVBO);
 		
 		// Delete the index VBO
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-		GL15.glDeleteBuffers(vboiId);
+		GL15.glDeleteBuffers(backgroundIndiciesVBO);
 		
 		// Delete the VAO
 		GL30.glBindVertexArray(0);
-		GL30.glDeleteVertexArrays(vaoId);
+		GL30.glDeleteVertexArrays(backgroundVAO);
 		
 		this.exitOnGLError("destroyOpenGL");
 		
@@ -337,17 +380,21 @@ public class Main implements IGameControl{
 			System.exit(-1);
 		}
 	}
+	
+	private long getTime()
+	{
+		return (Sys.getTime() * 1000) / Sys.getTimerResolution();
+	}
+	
+	public double calculateDelta() 
+	{
+		long currentTime = getTime();
+		double delta = (double) currentTime - (double) lastFrame;
+		this.lastFrame = getTime();
+		return delta;
+	}
 
 	/*
-	private long lastFrame;
-	private int lastKey;
-	private ArrayList<IKeyboardListener> keyboardListener = new ArrayList<IKeyboardListener>();
-	private double delta;
-	private Ikarus ikarus;
-	private int backgroundVAO = -1;
-	private int backgroundVBO = -1;
-	private int backgroundIndiciesVBO = -1;
-	
 	private MusicPlayer bg = new MusicPlayer();
 	
 	public static void main(String[] args) {
@@ -398,10 +445,7 @@ public class Main implements IGameControl{
 		bg = null;
 	}
 	
-	private long getTime()
-{
-		return (Sys.getTime() * 1000) / Sys.getTimerResolution();
-	}
+	
 	
 	@SuppressWarnings("unused")
 	private void loadCursor()
@@ -700,13 +744,7 @@ public class Main implements IGameControl{
 		}
 	}
 	
-	public double calculateDelta() 
-	{
-		long currentTime = getTime();
-		double delta = (double) currentTime - (double) lastFrame;
-		this.lastFrame = getTime();
-		return delta;
-	}
+	
 
 	@Override
 	public double getDelta() 

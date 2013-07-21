@@ -28,7 +28,7 @@ public abstract class StaticManager {
 	public static int MAIN_MENU_BACKGROUND_TEXTURE_ID = 1337;
 	public static int SHIP_TEXTURE_ID = 1337;
 	
-	
+	public static ShaderProgram DEFAULT_SHADER;
 	
 	
 	

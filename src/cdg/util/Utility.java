@@ -20,14 +20,14 @@ public abstract class Utility
 	
 	public static final float GL_COLOR_PER_BIT = 0.00390625f;
 	
-	public static float[] idToGlColor(int id, boolean useAlpha)
+	public static float[] idToGlColor(long l, boolean useAlpha)
 	{
 		byte[] val = new byte[4];
 
-		val[0] = (byte) (id >> 24);
-		val[1] = (byte) (id >> 16);
-		val[2] = (byte) (id >> 8);
-		val[3] = (byte) (id >> 0);
+		val[0] = (byte) (l >> 24);
+		val[1] = (byte) (l >> 16);
+		val[2] = (byte) (l >> 8);
+		val[3] = (byte) (l >> 0);
 		
 		float[] col;
 		if(useAlpha)
