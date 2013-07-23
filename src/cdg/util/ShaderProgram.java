@@ -95,18 +95,14 @@ public final class ShaderProgram {
 	 */
 	public void passMatrix(IMatrix mat, MatrixTypes type)
 	{
-		FloatBuffer matBuf = BufferUtils.createFloatBuffer(16);
-		matBuf.put(mat.toArray());
-		matBuf.flip();		
-		
 		if(type == MatrixTypes.SCALING)
-			GL20.glUniformMatrix4(this.scalingMatrixLocation, false, matBuf);
+			GL20.glUniformMatrix4(this.scalingMatrixLocation, false, mat.getAsBuffer());
 		else if(type == MatrixTypes.TRANSLATION)
-			GL20.glUniformMatrix4(this.translationMatrixLocation, false, matBuf);
+			GL20.glUniformMatrix4(this.translationMatrixLocation, false, mat.getAsBuffer());
 		else if(type == MatrixTypes.ROTATION)
-			GL20.glUniformMatrix4(this.rotationMatrixLocation, false, matBuf);
+			GL20.glUniformMatrix4(this.rotationMatrixLocation, false, mat.getAsBuffer());
 		else if(type == MatrixTypes.WINDOW)
-			GL20.glUniformMatrix4(this.windowMatrixLocation, false, matBuf);
+			GL20.glUniformMatrix4(this.windowMatrixLocation, false, mat.getAsBuffer());
 	}
 	
 	/**
@@ -116,11 +112,57 @@ public final class ShaderProgram {
 	 */
 	public void passMatrix(IMatrix mat, String locationName)
 	{
-		FloatBuffer matBuf = BufferUtils.createFloatBuffer(16);
-		matBuf.put(mat.toArray());
-		matBuf.flip();	
-		
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(this.shaderProgrammId, locationName), false, matBuf);
+		GL20.glUniformMatrix4(GL20.glGetUniformLocation(this.shaderProgrammId, locationName), false, mat.getAsBuffer());
+	}
+	
+	public void pass1i(String locationName, int value)
+	{
+		GL20.glUniform1i(GL20.glGetUniformLocation(this.shaderProgrammId, locationName), value);
+	}
+	
+	public void pass2i(String locationName, int value1, int value2)
+	{
+		GL20.glUniform2i(GL20.glGetUniformLocation(this.shaderProgrammId, locationName), value1, value2);
+	}
+	
+	public void pass3i(String locationName, int value1, int value2, int value3)
+	{
+		GL20.glUniform3i(GL20.glGetUniformLocation(this.shaderProgrammId, locationName), value1, value2, value3);
+	}
+	
+	public void pass4i(String locationName, int value1, int value2, int value3, int value4)
+	{
+		GL20.glUniform4i(GL20.glGetUniformLocation(this.shaderProgrammId, locationName), value1, value2, value3, value4);
+	}
+	
+	public void pass1f(String locationName, float value)
+	{
+		GL20.glUniform1f(GL20.glGetUniformLocation(this.shaderProgrammId, locationName), value);
+	}
+	
+	public void passVertex2(String locationName, Vertex2 vertex)
+	{
+		this.pass2f(locationName, vertex.x, vertex.y);
+	}
+	
+	public void pass2f(String locationName, float value1, float value2)
+	{
+		GL20.glUniform2f(GL20.glGetUniformLocation(this.shaderProgrammId, locationName), value1, value2);
+	}
+	
+	public void pass3f(String locationName, float value1, float value2, float value3)
+	{
+		GL20.glUniform3f(GL20.glGetUniformLocation(this.shaderProgrammId, locationName), value1, value2, value3);
+	}
+	
+	public void passVertex4(String locationName, Vertex4 vertex)
+	{
+		this.pass4f(locationName, vertex.x, vertex.y, vertex.z, vertex.w);
+	}
+	
+	public void pass4f(String locationName, float value1, float value2, float value3, float value4)
+	{
+		GL20.glUniform4f(GL20.glGetUniformLocation(this.shaderProgrammId, locationName), value1, value2, value3, value4);
 	}
 	
 	public void bind()

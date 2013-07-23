@@ -15,13 +15,13 @@ public class Roid extends Entity2D {
 	public static int ROID_TEXTURE_ID;
 	
 	private float turnRate;
+	private Random r;
 	
 	public Roid(long id, float x, float y, float width, float height) {
 		
 		super(id, x, y, width, height, Roid.ROID_TEXTURE_ID, Roid.ROID_SHADER);
-		
-		this.turnRate = (new Random().nextInt(20)+5) * 0.001f;
-		System.out.println(this.turnRate);
+		r = new Random();
+		this.turnRate = (r.nextInt(20)+5) * 0.001f;
 	}
 	
 	@Override
@@ -39,14 +39,13 @@ public class Roid extends Entity2D {
 	@Override
 	public void doTick() 
 	{
-		this.setRotation(this.getRotation() + this.turnRate * StaticManager.delta);
-		System.out.println(this.getRotation() + "/" + this.turnRate * StaticManager.delta);
+		this.addRotation(this.turnRate * StaticManager.delta);
 	}
 
 	@Override
-	public void finalize() {
+	public void drawChilds() {
 		// TODO Auto-generated method stub
-
+		
 	}
 
 }

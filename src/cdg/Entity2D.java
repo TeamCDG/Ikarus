@@ -214,7 +214,10 @@ public abstract class Entity2D extends Entity {
 		this.getShader().passMatrix(this.getScalingMatrix(), MatrixTypes.SCALING);
 		this.getShader().passMatrix(this.getTranslationMatrix(), MatrixTypes.TRANSLATION);
 		this.getShader().passMatrix(this.getRotationMatrix(), MatrixTypes.ROTATION);
-		this.getShader().passMatrix(Matrix4x4.getIdentity(), MatrixTypes.WINDOW);
+		
+		int val = selection ? 1 : 0;
+		this.getShader().pass1i("selection", val);
+		val = 0;
 		
 		this.passShaderVariables();
 		
@@ -230,6 +233,7 @@ public abstract class Entity2D extends Entity {
 		
 		this.getShader().unbind();
 		
+		this.drawChilds();
 	}
 	
 	protected abstract void passShaderVariables();
@@ -271,7 +275,15 @@ public abstract class Entity2D extends Entity {
 		return false;
 	}
 	
+	@Override
+	public final void finalize() {
+		// TODO Auto-generated method stub
+		
+	}
+	
 	public abstract void damage(float amount);
+	
+	public abstract void drawChilds();
 
 	/**
 	 * @return the selectionType

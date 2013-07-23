@@ -48,10 +48,10 @@ import de.matthiasmann.twl.utils.PNGDecoder.Format;
 public class Main implements IGameControl{
 
 	// Setup variables
-	private final String WINDOW_TITLE = "The Quad: Textured";
+	private final String WINDOW_TITLE = "Me got Roids";
 	// Quad variables
 	private int indicesCount = 0;
-	// Shader variables
+	// Shader variables                          
 	private int vsId = 0;
 	private int fsId = 0;
 	private int pId = 0;
@@ -63,8 +63,13 @@ public class Main implements IGameControl{
 	private int backgroundVBO = -1;
 	private int backgroundIndiciesVBO = -1;
 	
-	private int roidCount = 100;
+	private int roidCount = 0;
+	private int riBracuCount = 0;
+	private int gcFrameCount = 0;
 	private Roid[] roids;
+	private RiBracu[] test;
+	private Credits c;
+	private boolean playCredits = true;
 	
 	@Override
 	public double getDelta() {
@@ -103,9 +108,16 @@ public class Main implements IGameControl{
 		
 		
 		roids = new Roid[roidCount];
+		test = new RiBracu[riBracuCount];
 		
 		Roid.ROID_SHADER = new ShaderProgram("res/shader/roid.vert", "res/shader/roid.frag");
 		Roid.ROID_TEXTURE_ID =  Utility.loadPNGTexture("res/textures/testroid.png", GL13.GL_TEXTURE0);
+		
+		RiBracu.RIBRACU_SHADER = new ShaderProgram("res/shader/ribracu.vert", "res/shader/ribracu.frag");
+		RiBracu.RIBRACU_TEXTURE_ID =  Utility.loadPNGTexture("res/textures/ribracu_shield.png", GL13.GL_TEXTURE0);
+		
+		EngineExhaust.ENGINE_EXHAUST_SHADER = new ShaderProgram("res/shader/ee.vert", "res/shader/ee.frag");
+		EngineExhaust.ENGINE_EXHAUST_TEXTURE_ID =  Utility.loadPNGTexture("res/textures/exhaust.png", GL13.GL_TEXTURE0);
 		
 		for(int i = 0; i < roidCount; i++)
 		{
@@ -115,17 +127,38 @@ public class Main implements IGameControl{
 		}
 		this.exitOnGLError("setupRoids");
 		
+		for(int i = 0; i < riBracuCount; i++)
+		{
+			test[i] = new RiBracu(roids.length+i,((new Random().nextFloat()-0.5f)*2.0f)*StaticManager.ASPECT_RATIO, (new Random().nextFloat()-0.5f)*2.0f);
+			//roids[i] = new Roid(i, 0.5f, 0.5f, 0.2f, 0.2f);
+		}
+		
+		
+		
 		this.loadCursor();
+		c  = new Credits();
+		StaticManager.delta = (float) this.calculateDelta();
+		System.gc();
+		
+		
 		while (!Display.isCloseRequested()) {
 			
 			StaticManager.delta = (float) this.calculateDelta();
 			// Do a single loop (logic/render)
 			this.loopCycle();
 			
+			
 			// Force a maximum FPS of about 60
 			Display.sync(60);
 			// Let the CPU synchronize with the GPU if GPU is tagging behind
 			Display.update();
+			
+			this.gcFrameCount++;
+			if(this.gcFrameCount >= 20)
+			{
+				//System.gc();
+				this.gcFrameCount = 0;
+			}
 		}
 		
 		// Destroy OpenGL (Display)
@@ -168,15 +201,34 @@ public class Main implements IGameControl{
 
 	private void setupOpenGL() {
 		// Setup an OpenGL context with API version 3.2
+		
+		
 		try {
+			
+			
+			
+			DisplayMode[] modes = Display.getAvailableDisplayModes();
+			
+			DisplayMode finalMode = new DisplayMode(StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
+			
+			for (int i=0;i<modes.length;i++) {
+			    DisplayMode current = modes[i];
+			    if(current.getWidth() == StaticManager.WINDOW_WIDTH
+			       && current.getHeight() == StaticManager.WINDOW_HEIGHT
+			       && current.getBitsPerPixel() == 32
+			       && current.getFrequency() == 60)
+			    finalMode = current;
+			}
+			
 			PixelFormat pixelFormat = new PixelFormat();
 			ContextAttribs contextAtrributes = new ContextAttribs(3, 2)
 				.withForwardCompatible(true)
 				.withProfileCore(true);
 			
-			Display.setDisplayMode(new DisplayMode(StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT));
+			Display.setDisplayMode(finalMode);
 			Display.setTitle(WINDOW_TITLE);
 			Display.create(pixelFormat, contextAtrributes);
+			
 			
 			GL11.glViewport(0, 0, StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
 		} catch (LWJGLException e) {
@@ -294,12 +346,11 @@ public class Main implements IGameControl{
 		
 		// Bind to the index VBO that has all the information about the order of the vertices
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, backgroundIndiciesVBO);
-		FloatBuffer mat = BufferUtils.createFloatBuffer(16);
 		
-		mat.put(new Matrix4x4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f).toArray());
-		mat.flip();
-			
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(pId, "window_Matrix"), false, mat);	
+		
+		GL20.glUniformMatrix4(GL20.glGetUniformLocation(pId, "window_Matrix"), false, Matrix4x4.getIdentity().getAsBuffer());	
+	
+		
 		// Draw the vertices
 		GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount, GL11.GL_UNSIGNED_BYTE, 0);
 		
@@ -323,9 +374,25 @@ public class Main implements IGameControl{
 			roids[i].doTick();
 		}
 		
+		for(int i = 0; i < riBracuCount; i++)
+		{
+			test[i].doTick();
+		}
+		
 		for(int i = 0; i < roidCount; i++)
 		{
 			roids[i].draw();
+		}
+
+		for(int i = 0; i < riBracuCount; i++)
+		{
+			test[i].draw();
+		}
+		
+		if(this.playCredits )
+		{
+			c.doTick();
+			c.draw();
 		}
 		
 		this.exitOnGLError("loopCycle");
@@ -379,6 +446,8 @@ public class Main implements IGameControl{
 			if (Display.isCreated()) Display.destroy();
 			System.exit(-1);
 		}
+		
+		errorValue = 0;
 	}
 	
 	private long getTime()
@@ -391,6 +460,7 @@ public class Main implements IGameControl{
 		long currentTime = getTime();
 		double delta = (double) currentTime - (double) lastFrame;
 		this.lastFrame = getTime();
+		currentTime = 0;
 		return delta;
 	}
 

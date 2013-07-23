@@ -237,12 +237,14 @@ public class Ikarus implements IEntity, IKeyboardListener {
 		
 		if(new Random().nextInt(15) == 15)
 		{
-			
+		
+			/*
 			IEntity e = StaticManager.objects.get(new Random().nextInt(StaticManager.objects.size()));
 			if(e != this)
 			{
 				this.shoot(e.getX(), e.getY());
 			}
+			*/
 		}
 		
 		if(this.shooting)
@@ -402,7 +404,7 @@ public class Ikarus implements IEntity, IKeyboardListener {
 			float dx = (x) - (this.xway*(1.0f/StaticManager.ASPECT_RATIO));
 			float dy = y - (this.yway);
 			float w = (float)(Math.atan2(dx * (StaticManager.ASPECT_RATIO), dy) * (180/Math.PI));
-			StaticManager.shoots.add(new LaserShoot(this, 0.0f, 0.0f, this.xway, this.yway, w+10.0f*new Random().nextFloat()-5.0f, 0.5f));
+			//StaticManager.shoots.add(new LaserShoot(this, 0.0f, 0.0f, this.xway, this.yway, w+10.0f*new Random().nextFloat()-5.0f, 0.5f));
 			//this.shootSound.play();
 			if(this.aviableShoots != 0)
 				this.shooting = true;

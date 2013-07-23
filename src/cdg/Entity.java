@@ -79,11 +79,16 @@ public abstract class Entity {
 	}
 
 
+	public void addX(float x)
+	{
+		this.setX(this.x + x);
+	}
+	
 	/**
 	 * @param x the x to set
 	 */
 	public void setX(float x) {
-		this.translationMatrix = new Matrix4x4(1.0f, 0.0f, 0.0f, 0.0f,
+		this.translationMatrix.set(1.0f, 0.0f, 0.0f, 0.0f,
 				   							   0.0f, 1.0f, 0.0f, 0.0f,
 				   							   0.0f, 0.0f, 1.0f, 0.0f,
 				   							   x,  this.y, 0.0f, 1.0f);
@@ -98,16 +103,41 @@ public abstract class Entity {
 		return y;
 	}
 
+	
+	public void addY(float y)
+	{
+		this.setY(this.y + y);
+	}
 
 	/**
 	 * @param y the y to set
 	 */
 	public void setY(float y) {
-		this.translationMatrix = new Matrix4x4(1.0f, 0.0f, 0.0f, 0.0f,
+		this.translationMatrix.set(1.0f, 0.0f, 0.0f, 0.0f,
 				   							   0.0f, 1.0f, 0.0f, 0.0f,
 				   							   0.0f, 0.0f, 1.0f, 0.0f,
 				   							   this.x,  y, 0.0f, 1.0f);
 		this.y = y;
+	}
+	
+	public void setPosition(float x, float y)
+	{
+		this.x = x;
+		this.y = y;
+		this.translationMatrix.set(1.0f,     0.0f, 0.0f, 0.0f,
+				   							   0.0f,     1.0f, 0.0f, 0.0f,
+				   							   0.0f,     0.0f, 1.0f, 0.0f,
+				   							   this.x, this.y, 0.0f, 1.0f);
+	}
+	
+	public void move(float x, float y)
+	{
+		this.x += x;
+		this.y += y;
+		this.translationMatrix.set(1.0f,     0.0f, 0.0f, 0.0f,
+				   							   0.0f,     1.0f, 0.0f, 0.0f,
+				   							   0.0f,     0.0f, 1.0f, 0.0f,
+				   							   this.x, this.y, 0.0f, 1.0f);
 	}
 
 
@@ -150,6 +180,11 @@ public abstract class Entity {
 		return rotation;
 	}
 
+	
+	public void addRotation(float rotation)
+	{
+		this.setRotation(this.rotation + rotation);
+	}
 
 	/**
 	 * @param rotation the rotation in degree to set
@@ -159,7 +194,7 @@ public abstract class Entity {
 		
 		this.rotation = this.rotation % 360.0f;
 		
-		this.rotationMatrix = new Matrix4x4((float) Math.cos(Utility.degToRad(this.rotation)), (float) Math.sin(Utility.degToRad(this.rotation))*-1.0f, 0.0f, 0.0f,
+		this.rotationMatrix.set((float) Math.cos(Utility.degToRad(this.rotation)), (float) Math.sin(Utility.degToRad(this.rotation))*-1.0f, 0.0f, 0.0f,
 											(float) Math.sin(Utility.degToRad(this.rotation)), 		 (float) Math.cos(Utility.degToRad(this.rotation)), 0.0f, 0.0f,
 																						 0.0f, 													  0.0f, 1.0f, 0.0f,
 																						 0.0f, 													  0.0f, 0.0f, 1.0f);
@@ -227,7 +262,7 @@ public abstract class Entity {
 	 * @param xScale the xScale to set
 	 */
 	public void setXScale(float xScale) {
-		this.scalingMatrix = new Matrix4x4(1.0f, 0.0f, 0.0f, xScale,
+		this.scalingMatrix.set(1.0f, 0.0f, 0.0f, xScale,
 				   						   0.0f, 1.0f, 0.0f, this.yScale,
 				   						   0.0f, 0.0f, 1.0f, this.zScale,
 				   						   0.0f, 0.0f, 0.0f, 1.0f);
@@ -247,7 +282,7 @@ public abstract class Entity {
 	 * @param yScale the yScale to set
 	 */
 	public void setYScale(float yScale) {
-		this.scalingMatrix = new Matrix4x4(1.0f, 0.0f, 0.0f, this.xScale,
+		this.scalingMatrix.set(1.0f, 0.0f, 0.0f, this.xScale,
 				   						   0.0f, 1.0f, 0.0f, yScale,
 				   						   0.0f, 0.0f, 1.0f, this.zScale,
 				   						   0.0f, 0.0f, 0.0f, 1.0f);
@@ -266,7 +301,7 @@ public abstract class Entity {
 	 * @param yScale the yScale to set
 	 */
 	public void setZScale(float zScale) {
-		this.scalingMatrix = new Matrix4x4(1.0f, 0.0f, 0.0f, this.xScale,
+		this.scalingMatrix.set(1.0f, 0.0f, 0.0f, this.xScale,
 				   						   0.0f, 1.0f, 0.0f, this.yScale,
 				   						   0.0f, 0.0f, 1.0f, zScale,
 				   						   0.0f, 0.0f, 0.0f, 1.0f);
@@ -288,5 +323,4 @@ public abstract class Entity {
 	public void setShader(ShaderProgram shader) {
 		this.shader = shader;
 	}
-
 }

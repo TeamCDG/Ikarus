@@ -3,6 +3,7 @@ package cdg.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import cdg.Entity2D;
 import cdg.interfaces.IEntity;
 
 public abstract class StaticManager {
@@ -32,8 +33,8 @@ public abstract class StaticManager {
 	
 	
 	
-	public static List<IEntity> objects = new ArrayList<IEntity>();
+	public static List<Entity2D> objects = new ArrayList<Entity2D>();
 	public static List<IEntity> shoots = new ArrayList<IEntity>();
-	public static float delta;
+	public static float delta = 0;
 
 }

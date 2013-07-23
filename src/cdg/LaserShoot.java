@@ -25,7 +25,7 @@ import cdg.util.VertexData;
 
 public class LaserShoot implements IEntity {
 
-	private IEntity shooter;
+	private Entity2D shooter;
 	private float x;
 	private float y;
 	private float width;
@@ -53,7 +53,7 @@ public class LaserShoot implements IEntity {
 	private float hitCircleRadius = 0.02f;
 	private float force;
 	
-	public LaserShoot(IEntity shooter, float x, float y, float xway, float yway, float deg, float force) 
+	public LaserShoot(Entity2D shooter, float x, float y, float xway, float yway, float deg, float force) 
 	{
 		this.shooter = shooter;
 		this.xway = xway;
@@ -250,6 +250,7 @@ public class LaserShoot implements IEntity {
 			//this.turnLocked = true;
 		}
 		
+		/*
 		for(int i = 0; i < StaticManager.objects.size(); i++)
 		{
 			float radSum = this.hitCircleRadius  + StaticManager.objects.get(i).getHitCircleRadius();
@@ -265,6 +266,7 @@ public class LaserShoot implements IEntity {
 				}
 			}
 		}
+		*/
 		
 		
 		//System.out.println(deg+"/"+targetDeg+"/"+turnLocked+"/"+!((xway <= -1.05f+(-1.0f*(1.0f/StaticManager.ASPECT_RATIO)) || xway >= 1.05f+(1.0f*(1.0f/StaticManager.ASPECT_RATIO)))||(yway <= -1.0f || yway >= 1.0f)));
