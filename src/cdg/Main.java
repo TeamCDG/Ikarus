@@ -63,13 +63,13 @@ public class Main implements IGameControl{
 	private int backgroundVBO = -1;
 	private int backgroundIndiciesVBO = -1;
 	
-	private int roidCount = 100;
-	private int riBracuCount = 10;
+	private int roidCount = 0;
+	private int riBracuCount = 0;
 	private int gcFrameCount = 0;
 	private Roid[] roids;
 	private RiBracu[] test;
 	private Credits c;
-	private boolean playCredits = false;
+	private boolean playCredits = true;
 	
 	@Override
 	public double getDelta() {
@@ -194,7 +194,7 @@ public class Main implements IGameControl{
 	}
 
 	private void setupTextures() {
-		StaticManager.MAIN_MENU_BACKGROUND_TEXTURE_ID = Utility.loadPNGTexture("res/textures/grid.png", GL13.GL_TEXTURE0);
+		StaticManager.MAIN_MENU_BACKGROUND_TEXTURE_ID = Utility.loadPNGTexture("res/textures/background.png", GL13.GL_TEXTURE0);
 		
 		this.exitOnGLError("setupTexture");
 	}
@@ -247,10 +247,10 @@ public class Main implements IGameControl{
 	
 	private void setupQuad() {
 		
-		VertexData[] points = new VertexData[]{new VertexData(new float[]{-1.0f,1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{1.0f,0.0f}),
-				   new VertexData(new float[]{-1.0f,-1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{1.0f,1.0f}),
-				   new VertexData(new float[]{1.0f,-1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{0.0f,1.0f}),
-				   new VertexData(new float[]{1.0f,1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{0.0f,0.0f})};
+		VertexData[] points = new VertexData[]{new VertexData(new float[]{-1.0f,1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{0.0f,0.0f}),
+				   new VertexData(new float[]{-1.0f,-1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{0.0f,1.0f}),
+				   new VertexData(new float[]{1.0f,-1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{1.0f,1.0f}),
+				   new VertexData(new float[]{1.0f,1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{1.0f,0.0f})};
 		// Put each 'Vertex' in one FloatBuffer
 		FloatBuffer verticesBuffer = BufferUtils.createFloatBuffer(points.length *
 				VertexData.ELEMENT_COUNT);
@@ -262,7 +262,7 @@ public class Main implements IGameControl{
 		// OpenGL expects to draw vertices in counter clockwise order by default
 		byte[] indices = {
 				0, 1, 2,
-				0, 3, 2
+				2, 3, 0
 		};
 		indicesCount = indices.length;
 		ByteBuffer indicesBuffer = BufferUtils.createByteBuffer(indicesCount);
