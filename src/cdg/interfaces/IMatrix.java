@@ -14,4 +14,6 @@ public interface IMatrix
 			 float x3, float y3, float z3, float w3);
 	
 	public FloatBuffer getAsBuffer();
+	
+	public void finalize();
 }

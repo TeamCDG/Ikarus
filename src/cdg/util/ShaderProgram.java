@@ -21,6 +21,7 @@ public final class ShaderProgram {
 	private int translationMatrixLocation;
 	private int rotationMatrixLocation;
 	private int windowMatrixLocation;
+	private int camMatrixLocation;
 	
 	public ShaderProgram(String vertexShaderPath, String fragmentShaderPath) 
 	{
@@ -51,6 +52,7 @@ public final class ShaderProgram {
 		this.translationMatrixLocation = GL20.glGetUniformLocation(this.shaderProgrammId, "translation_Matrix");
 		this.rotationMatrixLocation = GL20.glGetUniformLocation(this.shaderProgrammId, "rotation_Matrix");
 		this.windowMatrixLocation = GL20.glGetUniformLocation(this.shaderProgrammId, "window_Matrix");
+		this.camMatrixLocation = GL20.glGetUniformLocation(this.shaderProgrammId, "cam_Matrix");
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -103,6 +105,8 @@ public final class ShaderProgram {
 			GL20.glUniformMatrix4(this.rotationMatrixLocation, false, mat.getAsBuffer());
 		else if(type == MatrixTypes.WINDOW)
 			GL20.glUniformMatrix4(this.windowMatrixLocation, false, mat.getAsBuffer());
+		else if(type == MatrixTypes.CAMERA)
+			GL20.glUniformMatrix4(this.camMatrixLocation, false, mat.getAsBuffer());
 	}
 	
 	/**

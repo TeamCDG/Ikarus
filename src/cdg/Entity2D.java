@@ -111,16 +111,16 @@ public abstract class Entity2D extends Entity {
 	private void setupGL()
 	{
 		VertexData[] points = new VertexData[]{new VertexData(new float[]{-1.0f * (this.getWidth() * 0.5f),this.getHeight() * 0.5f,0.0f,1.0f}, 
-												   Utility.idToGlColor(getId(), false), new float[]{0.0f, 0.0f}),
+												   Utility.idToGlColor(getId(), false), new float[]{1.0f, 0.0f}),
 												   
 				   							   new VertexData(new float[]{-1.0f * (this.getWidth() * 0.5f),-1.0f * (this.getHeight() * 0.5f),0.0f,1.0f}, 
-				   								   Utility.idToGlColor(getId(), false), new float[]{0.0f, 1.0f}),
-				   								   
-				   							   new VertexData(new float[]{this.getWidth() * 0.5f,-1.0f * (this.getHeight() * 0.5f),0.0f,1.0f}, 
 				   								   Utility.idToGlColor(getId(), false), new float[]{1.0f, 1.0f}),
 				   								   
+				   							   new VertexData(new float[]{this.getWidth() * 0.5f,-1.0f * (this.getHeight() * 0.5f),0.0f,1.0f}, 
+				   								   Utility.idToGlColor(getId(), false), new float[]{0.0f, 1.0f}),
+				   								   
 				   							   new VertexData(new float[]{this.getWidth() * 0.5f,this.getHeight() * 0.5f,0.0f,1.0f}, 
-				   								   Utility.idToGlColor(getId(), false), new float[]{1.0f, 0.0f})};
+				   								   Utility.idToGlColor(getId(), false), new float[]{0.0f, 0.0f})};
 		byte[] indices = {
 				0, 1, 2,
 				2, 3, 0

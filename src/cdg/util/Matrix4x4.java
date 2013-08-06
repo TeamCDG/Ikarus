@@ -91,5 +91,12 @@ public class Matrix4x4 implements IMatrix
 		// TODO Auto-generated method stub
 		return this.matrixBuf;
 	}
+	
+	@Override
+	public void finalize() {
+		this.matrixBuf.clear();
+		this.matrix = null;
+		this.matrixBuf = null;
+	}
 
 }
