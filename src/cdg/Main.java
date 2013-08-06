@@ -64,11 +64,7 @@ public class Main implements IGameControl{
 	private int backgroundIndiciesVBO = -1;
 	
 	private int roidCount = 100;
-<<<<<<< HEAD
 	private int riBracuCount = 10;
-=======
-	private int riBracuCount = 1;
->>>>>>> dafuq
 	private int gcFrameCount = 0;
 	private Roid[] roids;
 	private RiBracu[] test;
@@ -198,7 +194,7 @@ public class Main implements IGameControl{
 	}
 
 	private void setupTextures() {
-		StaticManager.MAIN_MENU_BACKGROUND_TEXTURE_ID = Utility.loadPNGTexture("res/textures/grid.png", GL13.GL_TEXTURE0);
+		StaticManager.MAIN_MENU_BACKGROUND_TEXTURE_ID = Utility.loadPNGTexture("res/textures/background.png", GL13.GL_TEXTURE0);
 		
 		this.exitOnGLError("setupTexture");
 	}
