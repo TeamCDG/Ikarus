@@ -28,5 +28,28 @@ public class Vertex4 implements IVertex {
 	public float getW() {
 		return this.w;
 	}
+	
+	public Vertex2 toVertex2()
+	{
+		return new Vertex2(this.x,this.y);
+	}
+
+	@Override
+	public boolean isGreater(IVertex v) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isEqual(IVertex v) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isLess(IVertex v) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 
 }

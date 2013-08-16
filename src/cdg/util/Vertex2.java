@@ -29,4 +29,36 @@ public class Vertex2 implements IVertex {
 		return this.w;
 	}
 
+	@Override
+	public boolean isGreater(IVertex v) {
+		if(v.getX() > this.getX() ||
+		   v.getY() > this.getY() ||
+		   v.getZ() > this.getZ())
+			return true;
+		return false;
+	}
+
+	@Override
+	public boolean isEqual(IVertex v) {
+		if(v.getX() == this.getX() ||
+		   v.getY() == this.getY() ||
+		   v.getZ() == this.getZ())
+					return true;
+		return false;
+	}
+
+	@Override
+	public boolean isLess(IVertex v) {
+		if(v.getX() < this.getX() ||
+		   v.getY() < this.getY() ||
+		   v.getZ() < this.getZ())
+					return true;
+		return false;
+	}
+
+	public Vertex2 getVertex2() {
+		// TODO Auto-generated method stub
+		return new Vertex2(this.x, this.y);
+	}
+
 }

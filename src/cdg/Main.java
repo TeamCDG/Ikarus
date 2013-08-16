@@ -63,13 +63,36 @@ public class Main implements IGameControl{
 	private int backgroundVBO = -1;
 	private int backgroundIndiciesVBO = -1;
 	
-	private int roidCount = 100;
+	private int roidCount = 10000;
 	private int riBracuCount = 10;
 	private int gcFrameCount = 0;
 	private Roid[] roids;
 	private RiBracu[] test;
 	private Credits c;
 	private boolean playCredits = false;
+	
+	private FontObject fpsFO;
+	private float fps = 0.0f;
+	private FontObject camXFO;
+	private float camX = 0.0f;
+	private FontObject camYFO;
+	private float camY = 0.0f;
+	private FontObject camScaleFO;
+	private float camScale = 1.0f;
+	private FontObject skippedFO;
+	
+	private float camMoveSpeed = (1.0f/3000.0f)*1;
+	
+	private Vertex2[] visibleScreenBounds = new Vertex2[] {new Vertex2(-1.0f, 1.0f),
+														   new Vertex2(-1.0f, -1.0f),
+														   new Vertex2(1.0f, -1.0f),
+														   new Vertex2(1.0f, 1.0f)};
+	private long lastFPS;
+	private Matrix4x4 visibleAreaMatrix = Matrix4x4.getIdentity();
+	
+	private boolean debugOverlay = true;
+	private boolean deltaF3 = false;
+
 	
 	@Override
 	public double getDelta() {
@@ -110,41 +133,69 @@ public class Main implements IGameControl{
 		roids = new Roid[roidCount];
 		test = new RiBracu[riBracuCount];
 		
-		Roid.ROID_SHADER = new ShaderProgram("res/shader/roid.vert", "res/shader/roid.frag");
-		Roid.ROID_TEXTURE_ID =  Utility.loadPNGTexture("res/textures/testroid.png", GL13.GL_TEXTURE0);
+		Roid.SHADER = new ShaderProgram("res/shader/roid.vert", "res/shader/roid.frag");
+		Roid.TEXTURE_ID =  Utility.loadPNGTexture("res/textures/testroid.png", GL13.GL_TEXTURE0);
 		
-		RiBracu.RIBRACU_SHADER = new ShaderProgram("res/shader/ribracu.vert", "res/shader/ribracu.frag");
-		RiBracu.RIBRACU_TEXTURE_ID =  Utility.loadPNGTexture("res/textures/ribracu_shield.png", GL13.GL_TEXTURE0);
+		RiBracu.SHADER = new ShaderProgram("res/shader/ribracu.vert", "res/shader/ribracu.frag");
+		RiBracu.TEXTURE_ID =  Utility.loadPNGTexture("res/textures/ribracu_shield.png", GL13.GL_TEXTURE0);
 		
-		EngineExhaust.ENGINE_EXHAUST_SHADER = new ShaderProgram("res/shader/ee.vert", "res/shader/ee.frag");
-		EngineExhaust.ENGINE_EXHAUST_TEXTURE_ID =  Utility.loadPNGTexture("res/textures/exhaust.png", GL13.GL_TEXTURE0);
+		EngineExhaust.SHADER = new ShaderProgram("res/shader/ee.vert", "res/shader/ee.frag");
+		EngineExhaust.TEXTURE_ID =  Utility.loadPNGTexture("res/textures/exhaust.png", GL13.GL_TEXTURE0);
+
+		Laser.SHADER = new ShaderProgram("res/shader/laser.vert", "res/shader/laser.frag");
+		Laser.TEXTURE_ID =  Utility.loadPNGTexture("res/textures/shoot.png", GL13.GL_TEXTURE0);
+		
+		FontObject.SHADER = new ShaderProgram("res/shader/background.vert", "res/shader/background.frag");	
+		
+		Component.DEFAULT_TEXT_SHADER = new ShaderProgram("res/shader/console_text.vert", "res/shader/console_text.frag");
+		Component.DEFAULT_MAIN_SHADER = new ShaderProgram("res/shader/component.vert","res/shader/component.frag");
 		
 		for(int i = 0; i < roidCount; i++)
 		{
 			float roidSize = new Random().nextFloat()*0.2f;
 			roids[i] = new Roid(i, ((new Random().nextFloat()-0.5f)*2.0f)*StaticManager.ASPECT_RATIO, (new Random().nextFloat()-0.5f)*2.0f, roidSize, roidSize);
-			//roids[i] = new Roid(i, 0.5f, 0.5f, 0.2f, 0.2f);
+			//roids[i] = new Roid(i, 0.0f, 0.0f, 0.6f, 0.6f);
 		}
 		this.exitOnGLError("setupRoids");
-		
+				
 		for(int i = 0; i < riBracuCount; i++)
 		{
 			test[i] = new RiBracu(roids.length+i,((new Random().nextFloat()-0.5f)*2.0f)*StaticManager.ASPECT_RATIO, (new Random().nextFloat()-0.5f)*2.0f);
 			//roids[i] = new Roid(i, 0.5f, 0.5f, 0.2f, 0.2f);
 		}
 		
-		
+		//o = new FontObject(0,0,"Hello World");
+		try {
+			StaticManager.DEFAULT_FONT = new BitmapFont("res\\font\\lcd.txt");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		fpsFO = new FontObject(-1.0f*StaticManager.ASPECT_RATIO, 1.0f, "Fps: "+fps+"f",StaticManager.DEFAULT_FONT);
+		camXFO = new FontObject(-1.0f*StaticManager.ASPECT_RATIO, 0.92f, "Cam X: "+camX,StaticManager.DEFAULT_FONT);
+		camYFO = new FontObject(-1.0f*StaticManager.ASPECT_RATIO, 0.84f, "Cam Y: "+camY,StaticManager.DEFAULT_FONT);
+		camScaleFO = new FontObject(-1.0f*StaticManager.ASPECT_RATIO, 0.76f, "Cam scale: "+camScale,StaticManager.DEFAULT_FONT);
+		skippedFO = new FontObject(-1.0f*StaticManager.ASPECT_RATIO, 0.68f, "skipped: 0",StaticManager.DEFAULT_FONT);
+		try {
+			StaticManager.CONSOLE = new GLConsole(new BitmapFont("res\\font\\consolas.txt"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		StaticManager.CONSOLE.setVisible(true);
 		
 		this.loadCursor();
 		c  = new Credits();
+		lastFPS = getTime();
 		StaticManager.delta = (float) this.calculateDelta();
 		System.gc();
 		
 		
 		while (!Display.isCloseRequested()) {
-			
+			this.updateCamera();
 			StaticManager.delta = (float) this.calculateDelta();
 			// Do a single loop (logic/render)
+			this.setVisibleBounds();
 			this.loopCycle();
 			
 			
@@ -152,6 +203,22 @@ public class Main implements IGameControl{
 			Display.sync(60);
 			// Let the CPU synchronize with the GPU if GPU is tagging behind
 			Display.update();
+			
+			this.updateFPS();
+			if(this.debugOverlay)
+			{
+				float fps = (Math.round((1000/StaticManager.delta)*100)/100.0f);
+				fpsFO.setText("Fps: "+fps+"f");
+				float gVal = 1.0f/30.0f*fps;
+				if(gVal > 1.0f)
+					gVal = 1.0f;
+				
+				float rVal = 1.0f;
+				if(fps > 30.0f)
+					rVal = 1.0f/60.0f*((60-fps)*2);
+				
+				fpsFO.setColor(new float[]{rVal,gVal,0.0f,1.0f});
+			}
 			
 			this.gcFrameCount++;
 			if(this.gcFrameCount >= 20)
@@ -163,6 +230,64 @@ public class Main implements IGameControl{
 		
 		// Destroy OpenGL (Display)
 		this.destroyOpenGL();
+	}
+	
+	private void updateCamera()
+	{
+		if(Keyboard.isKeyDown(Keyboard.KEY_UP))
+		{
+			camY+=this.camMoveSpeed*StaticManager.delta;
+			if(this.debugOverlay)
+				camYFO.setText("Cam Y: "+camY);
+		}
+		if(Keyboard.isKeyDown(Keyboard.KEY_DOWN))
+		{
+			camY-=this.camMoveSpeed*StaticManager.delta;
+			if(this.debugOverlay)
+				camYFO.setText("Cam Y: "+camY);
+		}
+		if(Keyboard.isKeyDown(Keyboard.KEY_LEFT))
+		{
+			camX -=this.camMoveSpeed*StaticManager.delta;
+			if(this.debugOverlay)
+				camXFO.setText("Cam Y: "+camX);
+		}
+		if(Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
+		{
+			camX+=this.camMoveSpeed*StaticManager.delta;
+			if(this.debugOverlay)
+				camXFO.setText("Cam Y: "+camX);
+		}
+		
+		if(Keyboard.isKeyDown(Keyboard.KEY_F3) && !this.deltaF3)
+		{
+			this.debugOverlay = !this.debugOverlay;
+			this.deltaF3 = true;
+			StaticManager.CONSOLE.writeLine("toggling debug overlay toggling debug overlay toggling debug overlay");
+		}
+		else if(!Keyboard.isKeyDown(Keyboard.KEY_F3))
+		{
+			this.deltaF3 = false;
+		}
+		
+		camScale += Mouse.getDWheel() * 0.001f;
+		
+		if(this.debugOverlay)
+			camScaleFO.setText("Cam scale: "+camScale);
+		
+		StaticManager.CAMERA_MATRIX.set(camScale, 0.0f, 0.0f, 0.0f, 
+				0.0f, camScale, 0.0f, 0.0f, 
+				0.0f, 0.0f, 1.0f, 0.0f, 
+				camX, camY, 0.0f, 1.0f);
+		this.visibleAreaMatrix.set(1.0f*(1.0f/camScale), 0.0f, 0.0f, 0.0f, 
+				0.0f, 1.0f*(1.0f/camScale), 0.0f, 0.0f, 
+				0.0f, 0.0f, 1.0f, 0.0f, 
+				camX, camY, 0.0f, 1.0f);
+		StaticManager.VISIBLE_TRANSLATION_MATRIX.set(1.0f, 0.0f, 0.0f, 0.0f, 
+				0.0f, 1.0f, 0.0f, 0.0f, 
+				0.0f, 0.0f, 1.0f, 0.0f, 
+				camX, camY, 0.0f, 1.0f);
+		
 	}
 	
 	@SuppressWarnings("unused")
@@ -243,6 +368,14 @@ public class Main implements IGameControl{
 		GL11.glViewport(0, 0, StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
 		
 		this.exitOnGLError("setupOpenGL");
+	}
+	
+	private void setVisibleBounds()
+	{
+		this.visibleScreenBounds = new Vertex2[] {this.visibleAreaMatrix.multiply(new Vertex2(-1.0f*StaticManager.ASPECT_RATIO, 1.0f)).toVertex2(),
+				this.visibleAreaMatrix.multiply(new Vertex2(-1.0f*StaticManager.ASPECT_RATIO, -1.0f)).toVertex2(),
+				this.visibleAreaMatrix.multiply(new Vertex2(1.0f*StaticManager.ASPECT_RATIO, -1.0f)).toVertex2(),
+				this.visibleAreaMatrix.multiply(new Vertex2(1.0f*StaticManager.ASPECT_RATIO, 1.0f)).toVertex2()};
 	}
 	
 	private void setupQuad() {
@@ -369,6 +502,8 @@ public class Main implements IGameControl{
 		
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		
+		int skipped = 0;
+		
 		for(int i = 0; i < roidCount; i++)
 		{
 			roids[i].doTick();
@@ -379,9 +514,21 @@ public class Main implements IGameControl{
 			test[i].doTick();
 		}
 		
+		for(int i = 0; i < StaticManager.shoots.size(); i++)
+		{
+			StaticManager.shoots.get(i).doTick();
+		}
+		
 		for(int i = 0; i < roidCount; i++)
 		{
-			roids[i].draw();
+			Entity2D cur = roids[i];
+			if(!Utility.isOutOfVisibleArea(this.visibleScreenBounds, cur.getBounds(), camX, camY))
+				cur.draw();
+			else
+				skipped++;
+				
+			cur = null;
+			
 		}
 
 		for(int i = 0; i < riBracuCount; i++)
@@ -389,11 +536,30 @@ public class Main implements IGameControl{
 			test[i].draw();
 		}
 		
+		for(int i = 0; i < StaticManager.shoots.size(); i++)
+		{
+			StaticManager.shoots.get(i).draw();
+		}
+		
 		if(this.playCredits )
 		{
 			c.doTick();
 			c.draw();
 		}
+		
+		
+		if(this.debugOverlay)
+		{
+			this.skippedFO.setText("skipped: "+skipped);
+			this.fpsFO.draw();
+			this.camXFO.draw();
+			this.camYFO.draw();
+			this.camScaleFO.draw();
+			
+			this.skippedFO.draw();
+		}
+		
+		//StaticManager.CONSOLE.draw();
 		
 		this.exitOnGLError("loopCycle");
 	}
@@ -448,6 +614,16 @@ public class Main implements IGameControl{
 		}
 		
 		errorValue = 0;
+	}
+	
+	public void updateFPS() {
+		if (getTime() - lastFPS > 1000) {
+			//fpsFO.setText("FPS: "+fps+"F");
+			Display.setTitle("FPS: " + fps);
+			fps = 0;
+			lastFPS += 1000;
+		}
+		fps++;
 	}
 	
 	private long getTime()

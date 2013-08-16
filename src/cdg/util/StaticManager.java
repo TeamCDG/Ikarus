@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cdg.Entity2D;
+import cdg.GLConsole;
 import cdg.interfaces.IEntity;
 
 public abstract class StaticManager {
@@ -12,8 +13,8 @@ public abstract class StaticManager {
 	public static int MENU_SHADER_PROGRAM_ID = 0;
 	public static int TEXT_SHADER_PROGRAM_ID = 0;
 	public static float[] CLEAR_COLOR = new float[]{0.0f,0.0f,0.1f,1.0f};
-	public static int WINDOW_WIDTH = 1280;
-	public static int WINDOW_HEIGHT = 720;
+	public static int WINDOW_WIDTH = (1280/10)*9;
+	public static int WINDOW_HEIGHT = (720/10)*9;
 	public static float FOV = 60f;
 	public static float ASPECT_RATIO = (float) WINDOW_WIDTH / (float) WINDOW_HEIGHT;
 	public static Matrix4x4 WINDOW_MATRIX = new Matrix4x4(1/ASPECT_RATIO, 0.0f, 0.0f, 0.0f,
@@ -31,10 +32,15 @@ public abstract class StaticManager {
 	
 	public static ShaderProgram DEFAULT_SHADER;
 	
-	
+	public static Matrix4x4 CAMERA_MATRIX = new Matrix4x4(1.0f, 0.0f, 0.0f, 0.0f,
+			  0.0f, 1.0f, 0.0f, 0.0f,
+			  0.0f, 0.0f, 1.0f, 0.0f,
+			  0.0f, 0.0f, 0.0f, 1.0f);
 	
 	public static List<Entity2D> objects = new ArrayList<Entity2D>();
-	public static List<IEntity> shoots = new ArrayList<IEntity>();
+	public static List<Entity2D> shoots = new ArrayList<Entity2D>();
 	public static float delta = 0;
-
+	public static Matrix4x4 VISIBLE_TRANSLATION_MATRIX = Matrix4x4.getIdentity();
+	public static BitmapFont DEFAULT_FONT;
+	public static GLConsole CONSOLE;
 }

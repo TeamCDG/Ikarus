@@ -27,13 +27,15 @@ import cdg.util.VertexData;
 
 public class EngineExhaust extends Entity2D {
 
+	
+	
 	private Random r = new Random();
 	
-	public static int ENGINE_EXHAUST_TEXTURE_ID;
-	public static ShaderProgram ENGINE_EXHAUST_SHADER;
+	public static ShaderProgram SHADER;
+	public static int TEXTURE_ID;
 	
 	public EngineExhaust(long id, float x, float y) {
-		super(id, 0.0f, 0.0f, 0.02f, 0.08f, EngineExhaust.ENGINE_EXHAUST_TEXTURE_ID, EngineExhaust.ENGINE_EXHAUST_SHADER, new VertexData[]{
+		super(id, 0.0f, 0.0f, 0.02f, 0.08f, EngineExhaust.TEXTURE_ID, EngineExhaust.SHADER, new VertexData[]{
 				   new VertexData(new float[]{x-(0.02f/2.0f),y+(0.08f/2.0f),0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{0.0f, 0.0f}),
 				   new VertexData(new float[]{x-(0.02f/2.0f),y-(0.08f/2.0f),0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{0.0f, 1.0f}),
 				   new VertexData(new float[]{x+(0.02f/2.0f),y-(0.08f/2.0f),0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{1.0f, 1.0f}),

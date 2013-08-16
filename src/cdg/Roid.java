@@ -10,16 +10,16 @@ import cdg.util.Utility;
 
 
 public class Roid extends Entity2D {
-
-	public static ShaderProgram ROID_SHADER;
-	public static int ROID_TEXTURE_ID;
+	
+	public static ShaderProgram SHADER;
+	public static int TEXTURE_ID;
 	
 	private float turnRate;
 	private Random r;
 	
 	public Roid(long id, float x, float y, float width, float height) {
 		
-		super(id, x, y, width, height, Roid.ROID_TEXTURE_ID, Roid.ROID_SHADER);
+		super(id, x, y, width, height, Roid.TEXTURE_ID, Roid.SHADER);
 		r = new Random();
 		this.turnRate = (r.nextInt(20)+5) * 0.001f;
 	}
@@ -27,7 +27,7 @@ public class Roid extends Entity2D {
 	@Override
 	protected void passShaderVariables() {
 		this.getShader().passMatrix(StaticManager.WINDOW_MATRIX, MatrixTypes.WINDOW);
-
+		this.getShader().passMatrix(StaticManager.CAMERA_MATRIX, MatrixTypes.CAMERA);
 	}
 
 	@Override

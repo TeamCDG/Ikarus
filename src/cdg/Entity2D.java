@@ -26,6 +26,11 @@ public abstract class Entity2D extends Entity {
 	public static final int CDT_CIRCLE = 0;
 	public static final int CDT_BOUNDING_LINES = 1;
 	
+	public static final int BOUNDS_TOP_LEFT_EDGE = 0;
+	public static final int BOUNDS_BOT_LEFT_EDGE = 1;
+	public static final int BOUNDS_BOT_RIGHT_EDGE = 2;
+	public static final int BOUNDS_TOP_RIGHT_EDGE = 3;
+	
 	private int VAO = -1;
 	private int VBO = -1;
 	private int indiciesVBO = -1;
@@ -367,6 +372,16 @@ public abstract class Entity2D extends Entity {
 	 */
 	public void setCollisionRadius(float collisionRadius) {
 		this.collisionRadius = collisionRadius;
+	}
+	
+	public Vertex2[] getBounds()
+	{
+		Vertex2 tl = new Vertex2(this.getX()-(this.getWidth()/2.0f), this.getY()-(this.getHeight()/2.0f));
+		Vertex2 bl = new Vertex2(this.getX()-(this.getWidth()/2.0f), this.getY()+(this.getHeight()/2.0f));
+		Vertex2 br = new Vertex2(this.getX()+(this.getWidth()/2.0f), this.getY()+(this.getHeight()/2.0f));
+		Vertex2 tr = new Vertex2(this.getX()+(this.getWidth()/2.0f), this.getY()-(this.getHeight()/2.0f));
+		
+		return new Vertex2[]{tl, bl, br, tr};
 	}
 
 }

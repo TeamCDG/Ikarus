@@ -28,6 +28,11 @@ import cdg.util.VertexData;
 
 public class RiBracu extends Entity2D {
 
+
+	
+	public static ShaderProgram SHADER;
+	public static int TEXTURE_ID;
+	
 	private float targetDeg = -90;
 	private float turnRate = 0.12f;
 	private float moveRate = 0.0008f;
@@ -49,11 +54,9 @@ public class RiBracu extends Entity2D {
 	private Vertex2 target;
 	private boolean moved = false;
 	
-	public static ShaderProgram RIBRACU_SHADER;
-	public static int RIBRACU_TEXTURE_ID;
 	
 	public RiBracu(long id, float x, float y) {
-		super(id, x, y, 0.2f, 0.2f, RiBracu.RIBRACU_TEXTURE_ID, RiBracu.RIBRACU_SHADER);
+		super(id, x, y, 0.2f, 0.2f, RiBracu.TEXTURE_ID, RiBracu.SHADER);
 		
 		this.shieldLevel = 1.0f;
 		this.engineLeft = new EngineExhaust(1,-0.04f, -0.08f);
@@ -112,12 +115,12 @@ public class RiBracu extends Entity2D {
 		if(r.nextInt(20) == 15 && !this.turnLocked && this.target == null)
 			this.targetDeg = r.nextInt(360);
 		
-		/*
+		
 		if(new Random().nextInt(500) == 15 && !this.turnLocked)
 		{
-			StaticManager.shoots.add(new LaserShoot(this, 0.085f, 0.12f, this.xway, this.yway, this.getRotation(), 0.75f));
-			StaticManager.shoots.add(new LaserShoot(this, -0.09f, 0.12f, this.xway, this.yway, this.getRotation(), 0.75f));
-		}*/
+			StaticManager.shoots.add(new Laser(this, 0, 0.085f, 0.12f, this.getX(), this.getY(), 0.02f, 0.06f, this.getRotation()));
+			StaticManager.shoots.add(new Laser(this, 0, -0.09f, 0.12f, this.getX(), this.getY(), 0.02f, 0.06f, this.getRotation()));
+		}
 				
 		if(this.target != null)
 		{
@@ -211,7 +214,7 @@ public class RiBracu extends Entity2D {
 		if(this.shieldLevel > 1.0f)
 			this.shieldLevel = 1.0f;
 		
-		if(this.getTextureId() == RiBracu.RIBRACU_TEXTURE_ID)
+		if(this.getTextureId() == RiBracu.TEXTURE_ID)
 		{
 			this.engineLeft.doTick(this.getRotation(), this.getX(), this.getY());
 			this.engineRight.doTick(this.getRotation(), this.getX(), this.getY());
@@ -256,7 +259,7 @@ public class RiBracu extends Entity2D {
 
 	@Override
 	public void drawChilds() {
-		if(this.getTextureId() == RiBracu.RIBRACU_TEXTURE_ID && this.moved)
+		if(this.getTextureId() == RiBracu.TEXTURE_ID && this.moved)
 		{
 			this.engineLeft.draw();
 			this.engineRight.draw();

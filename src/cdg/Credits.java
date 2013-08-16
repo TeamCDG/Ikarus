@@ -369,7 +369,7 @@ public class Credits
 			{
 				RiBracu r = new RiBracu(1,((new Random().nextFloat()+4.0f)), (new Random().nextFloat()-0.5f)*8.0f);
 				r.setTarget(heart[i]);
-				r.setTextureId(Roid.ROID_TEXTURE_ID);
+				r.setTextureId(Roid.TEXTURE_ID);
 				r.setShader(this.cShader);
 				this.hShips.add(r);
 			}

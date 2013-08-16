@@ -97,6 +97,7 @@ public final class ShaderProgram {
 	 */
 	public void passMatrix(IMatrix mat, MatrixTypes type)
 	{
+		
 		if(type == MatrixTypes.SCALING)
 			GL20.glUniformMatrix4(this.scalingMatrixLocation, false, mat.getAsBuffer());
 		else if(type == MatrixTypes.TRANSLATION)
@@ -107,6 +108,7 @@ public final class ShaderProgram {
 			GL20.glUniformMatrix4(this.windowMatrixLocation, false, mat.getAsBuffer());
 		else if(type == MatrixTypes.CAMERA)
 			GL20.glUniformMatrix4(this.camMatrixLocation, false, mat.getAsBuffer());
+			
 	}
 	
 	/**
