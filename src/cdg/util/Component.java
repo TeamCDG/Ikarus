@@ -11,6 +11,7 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
+import cdg.interfaces.IMatrix;
 import cdg.interfaces.IVertex;
 
 public abstract class Component 
@@ -39,6 +40,7 @@ public abstract class Component
 	private boolean hasBackground;
 	private boolean selected = false;
 	private int tabId;
+	private float textScale = 1.0f;
 	
 	private float x;
 	private float y;
@@ -47,8 +49,8 @@ public abstract class Component
 	
 	private float iconX;
 	private float iconY;
-	private float iconWidth;
-	private float iconHeight;
+	private float iconWidth = 1.0f;
+	private float iconHeight = 1.0f;
 	
 	private int textVAO = -1;
 	private int textVBO = -1;
@@ -71,6 +73,8 @@ public abstract class Component
 	private int iconICount = -1;
 	
 	private boolean autosizeWithText;
+	
+
 	private boolean hasIcon = false;
 	private Vertex4 visibleArea;
 	private float textEdgeDistance = 0.005f;
@@ -81,6 +85,9 @@ public abstract class Component
 	
 	private float scrollX;
 	private float scrollY;
+	
+	private Matrix4x4 iconScalingMatrix = Matrix4x4.getIdentity();
+	private Matrix4x4 iconTranslationMatrix = Matrix4x4.getIdentity();
 	
 	public Component(int id, float x, float y, float width, float height)
 	{
@@ -126,7 +133,7 @@ public abstract class Component
 									   0.0f, 0.0f, 1.0f, 0.0f, 
 									   this.x, this.y, 0.0f, 1.0f);
 		this.visibleArea = this.translationMatrix.multiply(new Vertex4(this.textOffsetX+this.textEdgeDistance, this.textOffsetY+this.textEdgeDistance, 
-				this.width-this.frameSize-this.textEdgeDistance, -this.height+this.frameSize+this.textEdgeDistance));
+				this.width/*-this.frameSize-this.textEdgeDistance*/, -this.height/*+this.frameSize+this.textEdgeDistance*/));
 		this.setupMainGL();
 		this.setupSelectionGL();
 		this.setupTextGL();
@@ -553,12 +560,112 @@ public abstract class Component
 	
 	private final void setupIconGL()
 	{
+		VertexData[] points = new VertexData[]{
+				   new VertexData(new float[]{0.0f,0.0f,0.0f,1.0f}, 
+					   new float[]{1.0f, 1.0f, 1.0f, 1.0f}, new float[]{1.0f, 0.0f}),
+					   
+				   new VertexData(new float[]{0.0f,this.height,0.0f,1.0f}, 
+					   new float[]{1.0f, 1.0f, 1.0f, 1.0f}, new float[]{1.0f, 1.0f}),
+					   
+				   new VertexData(new float[]{this.width,this.height,0.0f,1.0f}, 
+					   new float[]{1.0f, 1.0f, 1.0f, 1.0f}, new float[]{0.0f, 1.0f}),
+					   
+				   new VertexData(new float[]{this.width,0.0f,0.0f,1.0f}, 
+					   new float[]{1.0f, 1.0f, 1.0f, 1.0f}, new float[]{0.0f, 0.0f})};
 		
+			byte[] indices = {
+				0, 1, 2,
+				2, 3, 0
+			};
+			// Put each 'Vertex' in one FloatBuffer
+			FloatBuffer verticesBuffer = BufferUtils.createFloatBuffer(points.length *
+					VertexData.ELEMENT_COUNT);
+			for (int i = 0; i < points.length; i++) {
+				// Add position, color and texture floats to the buffer
+				verticesBuffer.put(points[i].getElements());
+			}
+			verticesBuffer.flip();	
+			
+			selectionICount = indices.length;
+			ByteBuffer indicesBuffer = BufferUtils.createByteBuffer(selectionICount);
+			indicesBuffer.put(indices);
+			indicesBuffer.flip();
+			
+			// Create a new Vertex Array Object in memory and select it (bind)
+			if(this.selectionVAO == -1)
+				selectionVAO = GL30.glGenVertexArrays();
+			
+			GL30.glBindVertexArray(selectionVAO);
+			
+			// Create a new Vertex Buffer Object in memory and select it (bind)
+			if(this.selectionVBO == -1)
+				selectionVBO = GL15.glGenBuffers();
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, selectionVBO);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesBuffer, GL15.GL_STATIC_DRAW);
+				
+			// Put the position coordinates in attribute list 0
+			GL20.glVertexAttribPointer(0, VertexData.POSITION_ELEMENT_COUNT, GL11.GL_FLOAT, 
+					false, VertexData.STRIDE, VertexData.POSITION_BYTE_OFFSET);
+			// Put the color components in attribute list 1
+			GL20.glVertexAttribPointer(1, VertexData.COLOR_ELEMENT_COUNT, GL11.GL_FLOAT, 
+					false, VertexData.STRIDE, VertexData.COLOR_BYTE_OFFSET);
+			// Put the texture coordinates in attribute list 2
+			GL20.glVertexAttribPointer(2, VertexData.COLOR_ELEMENT_COUNT, GL11.GL_FLOAT, 
+					false, VertexData.STRIDE, VertexData.TEXTURE_BYTE_OFFSET);
+				
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+					
+			// Deselect (bind to 0) the VAO
+			GL30.glBindVertexArray(0);
+					
+			// Create a new VBO for the indices and select it (bind) - INDICES
+			if(this.selectionIVBO == -1)
+				selectionIVBO = GL15.glGenBuffers();
+			GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, selectionIVBO);
+			GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL15.GL_STATIC_DRAW);
+			GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 	
 	public final void drawSelection()
 	{
+		this.mainShader.bind();
 		
+		/*
+		if(this.textFont.getFontTextureID() != -1)
+		{
+			// Bind the texture
+			GL13.glActiveTexture(GL13.GL_TEXTURE0);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.textFont.getFontTextureID() );
+		}*/
+		
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+				
+		// Bind to the VAO that has all the information about the vertices
+		GL30.glBindVertexArray(this.selectionVAO);
+		GL20.glEnableVertexAttribArray(0);
+		GL20.glEnableVertexAttribArray(1);
+		GL20.glEnableVertexAttribArray(2);
+				
+		// Bind to the index VBO that has all the information about the order of the vertices
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, this.selectionIVBO);
+		
+		this.mainShader.passMatrix(Matrix4x4.getIdentity()/*scalingMatrix*/, MatrixTypes.SCALING);
+		this.mainShader.passMatrix(this.translationMatrix, MatrixTypes.TRANSLATION);
+		this.mainShader.passMatrix(Matrix4x4.getIdentity()/*rotationMatrix*/, MatrixTypes.ROTATION);
+		this.mainShader.passMatrix(StaticManager.WINDOW_MATRIX, MatrixTypes.WINDOW);
+		this.mainShader.pass1i("selection", 1);
+		//this.mainShader.pass4f("visible_Area",this.visibleArea.getX(),this.visibleArea.getY(),this.visibleArea.getZ(),this.visibleArea.getW());
+		// Draw the vertices
+		GL11.glDrawElements(GL11.GL_TRIANGLES, this.selectionICount, GL11.GL_UNSIGNED_BYTE, 0);
+				
+		// Put everything back to default (deselect)
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+		GL20.glDisableVertexAttribArray(0);
+		GL20.glDisableVertexAttribArray(1);
+		GL20.glDisableVertexAttribArray(2);
+		GL30.glBindVertexArray(0);
+		
+		this.mainShader.unbind();
 	}
 	
 	private final void drawText()
@@ -581,7 +688,7 @@ public abstract class Component
 		// Bind to the index VBO that has all the information about the order of the vertices
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, this.textIVBO);
 		
-		this.textShader.passMatrix(Matrix4x4.getIdentity()/*scalingMatrix*/, MatrixTypes.SCALING);
+		this.textShader.passMatrix(this.textScaleMatrix, MatrixTypes.SCALING);
 		this.textShader.passMatrix(this.textTranslationMatrix, MatrixTypes.TRANSLATION);
 		this.textShader.passMatrix(Matrix4x4.getIdentity()/*rotationMatrix*/, MatrixTypes.ROTATION);
 		this.textShader.passMatrix(StaticManager.WINDOW_MATRIX, MatrixTypes.WINDOW);
@@ -602,7 +709,42 @@ public abstract class Component
 	
 	private final void drawIcon()
 	{
+		this.mainShader.bind();
 		
+		
+		if(this.iconTexID != -1)
+		{
+			// Bind the texture
+			GL13.glActiveTexture(GL13.GL_TEXTURE0);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.iconTexID);
+		}
+				
+		// Bind to the VAO that has all the information about the vertices
+		GL30.glBindVertexArray(this.iconVAO);
+		GL20.glEnableVertexAttribArray(0);
+		GL20.glEnableVertexAttribArray(1);
+		GL20.glEnableVertexAttribArray(2);
+				
+		// Bind to the index VBO that has all the information about the order of the vertices
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, this.iconIVBO);
+		
+		this.mainShader.passMatrix(this.iconScalingMatrix, MatrixTypes.SCALING);
+		this.mainShader.passMatrix(this.iconTranslationMatrix, MatrixTypes.TRANSLATION);
+		this.mainShader.passMatrix(Matrix4x4.getIdentity()/*rotationMatrix*/, MatrixTypes.ROTATION);
+		this.mainShader.passMatrix(StaticManager.WINDOW_MATRIX, MatrixTypes.WINDOW);
+		this.mainShader.pass1i("selection", 0);
+		//this.mainShader.pass4f("visible_Area",this.visibleArea.getX(),this.visibleArea.getY(),this.visibleArea.getZ(),this.visibleArea.getW());
+		// Draw the vertices
+		GL11.glDrawElements(GL11.GL_TRIANGLES, this.iconICount, GL11.GL_UNSIGNED_BYTE, 0);
+				
+		// Put everything back to default (deselect)
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+		GL20.glDisableVertexAttribArray(0);
+		GL20.glDisableVertexAttribArray(1);
+		GL20.glDisableVertexAttribArray(2);
+		GL30.glBindVertexArray(0);
+		
+		this.mainShader.unbind();
 	}
 	
 	private final void drawMainGL()
@@ -855,4 +997,29 @@ public abstract class Component
 		this.y = y;
 	}
 	
+	public Vertex4 getVisibleArea() {
+		return visibleArea;
+	}
+
+	public void setVisibleArea(Vertex4 visibleArea) {
+		this.visibleArea = visibleArea;
+	}
+
+	/**
+	 * @return the textScale
+	 */
+	public float getTextScale() {
+		return textScale;
+	}
+
+	/**
+	 * @param textScale the textScale to set
+	 */
+	public void setTextScale(float textScale) {
+		this.textScale = textScale;
+		this.textScaleMatrix.set(textScale,      0.0f, 		0.0f, 0.0f, 
+				   				      0.0f, textScale, 		0.0f, 0.0f, 
+				   			          0.0f,      0.0f, textScale, 0.0f, 
+				   			          0.0f, 	 0.0f, 		0.0f, 1.0f);
+	}
 }
