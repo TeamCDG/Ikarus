@@ -63,7 +63,7 @@ public class Main implements IGameControl{
 	private int backgroundVBO = -1;
 	private int backgroundIndiciesVBO = -1;
 	
-	private int roidCount = 10000;
+	private int roidCount = 1000;
 	private int riBracuCount = 10;
 	private int gcFrameCount = 0;
 	private Roid[] roids;
@@ -559,7 +559,7 @@ public class Main implements IGameControl{
 			this.skippedFO.draw();
 		}
 		
-		//StaticManager.CONSOLE.draw();
+		StaticManager.CONSOLE.draw();
 		
 		this.exitOnGLError("loopCycle");
 	}
