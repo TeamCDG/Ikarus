@@ -81,17 +81,15 @@ public class GLConsole
 		this.y = 0;
 		this.textX = SELECTION_FRAME_SIZE+INNER_FRAME_SIZE+0.005f;
 		this.textY = -SELECTION_FRAME_SIZE-INNER_FRAME_SIZE-0.005f;
-		this.textVX = this.x + this.width-SELECTION_FRAME_SIZE-INNER_FRAME_SIZE - 0.005f;
-		this.textVY = this.y - this.height+(2*SELECTION_FRAME_SIZE)+(scaleFactor*font.getHeight('A')+(2*INNER_FRAME_SIZE)) + 0.005f;
-		this.console = new FontObject(this.textX, this.textY, "", font, this.consoleTextShader);
-		this.console.setVisibleArea(new Vertex4(this.textX,this.textY,this.textVX,this.textVY));
-		this.console.scale(scaleFactor);
+		this.textVX = this.x + this.width-SELECTION_FRAME_SIZE-INNER_FRAME_SIZE - 0.01f;
+		this.textVY = this.y - this.height+(2*SELECTION_FRAME_SIZE)+(scaleFactor*font.getHeight('A')+(2*INNER_FRAME_SIZE)) + 0.015f;
 		this.title = new FontObject(INNER_FRAME_SIZE+0.005f, -INNER_FRAME_SIZE, "GLConsole", font);
 		this.title.scale(0.5f);
 		this.closeTextureID = Utility.loadPNGTextureSmooth("res/icons/close.png", GL13.GL_TEXTURE0);
-		
-		this.con = new FrameLabel(7777, SELECTION_FRAME_SIZE, -SELECTION_FRAME_SIZE, 0.4f, 0.4f, font, "aiwdhaiwdh\nawdadw\nwdawdawdawd\n\nawdawdawd");
-		
+		float consoleFrameHeight = -this.height+(3*SELECTION_FRAME_SIZE)+(scaleFactor*font.getHeight('A')+(2*INNER_FRAME_SIZE));
+		this.con = new FrameLabel(7777, SELECTION_FRAME_SIZE, -SELECTION_FRAME_SIZE, this.width - (2*SELECTION_FRAME_SIZE), -consoleFrameHeight, font, "");
+		this.con.setVisibleArea(new Vertex4(this.textX,this.textY,this.textVX,this.textVY));
+		this.con.setTextScale(0.5f);
 		this.textBox = new FontObject(this.textX, this.textVY-SELECTION_FRAME_SIZE-(2*INNER_FRAME_SIZE), "blaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", font, this.consoleTextShader);
 		this.textBox.scale(this.scaleFactor);
 		this.textBox.setVisibleArea(new Vertex4(this.textX, this.textVY-SELECTION_FRAME_SIZE-(2*INNER_FRAME_SIZE), this.textVX, this.textVY-SELECTION_FRAME_SIZE-(2*INNER_FRAME_SIZE)-(scaleFactor*font.getHeight('A'))));
@@ -101,8 +99,6 @@ public class GLConsole
 	
 	private void setupGL()
 	{
-	
-		float consoleFrameHeight = -this.height+(2*SELECTION_FRAME_SIZE)+(scaleFactor*font.getHeight('A')+(2*INNER_FRAME_SIZE));
 		VertexData[] points = new VertexData[]{//Background
 											   new VertexData(new float[]{0.0f,0.0f,0.0f,1.0f}, 
 												   new float[]{0.2f, 0.2f, 0.2f, 0.90f}, new float[]{0.0f, 0.0f}),
@@ -166,124 +162,7 @@ public class GLConsole
 								   					FRAME_COLOR, new float[]{0.0f, 0.0f}),
 											   								   
 								   				new VertexData(new float[]{this.width,-this.height-FRAME_SIZE,0.0f,1.0f}, 
-									   				FRAME_COLOR, new float[]{0.0f, 0.0f}),
-									   				
-						   							   //Console Left Frame
-				   							   new VertexData(new float[]{SELECTION_FRAME_SIZE,-SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-															   
-							   				   new VertexData(new float[]{SELECTION_FRAME_SIZE,consoleFrameHeight,0.0f,1.0f}, 
-							   						FRAME_COLOR, new float[]{0.0f, 0.0f}),
-									   								   
-											   new VertexData(new float[]{SELECTION_FRAME_SIZE+INNER_FRAME_SIZE,consoleFrameHeight,0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-									   								   
-				   							   new VertexData(new float[]{SELECTION_FRAME_SIZE+INNER_FRAME_SIZE,-SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-							   						FRAME_COLOR, new float[]{0.0f, 0.0f}),
-									   						
-							   					//Console Top Frame
-						   						new VertexData(new float[]{SELECTION_FRAME_SIZE,-SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-																			   
-									   			new VertexData(new float[]{SELECTION_FRAME_SIZE,-SELECTION_FRAME_SIZE-INNER_FRAME_SIZE,0.0f,1.0f}, 
-									   				FRAME_COLOR, new float[]{0.0f, 0.0f}),
-											   								   
-												new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,-SELECTION_FRAME_SIZE-INNER_FRAME_SIZE,0.0f,1.0f}, 
-						   							FRAME_COLOR, new float[]{0.0f, 0.0f}),
-											   								   
-						   						new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,-SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-									   				FRAME_COLOR, new float[]{0.0f, 0.0f}),
-											   				
-									   			//Console Right Frame
-						   					    new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE-FRAME_SIZE,-SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-																		   
-							   				    new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE-FRAME_SIZE,consoleFrameHeight,0.0f,1.0f}, 
-							   						FRAME_COLOR, new float[]{0.0f, 0.0f}),
-										   								   
-											    new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,consoleFrameHeight,0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-									   								   
-				   							    new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,-SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-							   						FRAME_COLOR, new float[]{0.0f, 0.0f}),
-									   						
-							   					//Console Bot Frame
-											    new VertexData(new float[]{SELECTION_FRAME_SIZE,consoleFrameHeight-INNER_FRAME_SIZE,0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-																			   
-									   		    new VertexData(new float[]{SELECTION_FRAME_SIZE,consoleFrameHeight,0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-											   								   
-											    new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,consoleFrameHeight,0.0f,1.0f}, 
-								   					FRAME_COLOR, new float[]{0.0f, 0.0f}),
-												   								   
-								   				new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,consoleFrameHeight-INNER_FRAME_SIZE,0.0f,1.0f}, 
-									   				FRAME_COLOR, new float[]{0.0f, 0.0f}),
-										   				
-									   			//Close Button
-											    new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,0.0f-INNER_FRAME_SIZE,0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{1.0f, 0.0f}),
-																						   
-									   		    new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,-SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-									   		    	FRAME_COLOR, new float[]{1.0f, 1.0f}),
-													   								   
-											    new VertexData(new float[]{this.width-INNER_FRAME_SIZE,-SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-											    	FRAME_COLOR, new float[]{0.0f, 1.0f}),
-														   								   
-								   				new VertexData(new float[]{this.width-INNER_FRAME_SIZE,0.0f-INNER_FRAME_SIZE,0.0f,1.0f}, 
-								   					FRAME_COLOR, new float[]{0.0f, 0.0f}),
-								   					
-								   				//TextBox Left Frame
-				   							   new VertexData(new float[]{SELECTION_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE+INNER_FRAME_SIZE+scaleFactor*font.getHeight('A'),0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-																	   
-							   				   new VertexData(new float[]{SELECTION_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-							   						FRAME_COLOR, new float[]{0.0f, 0.0f}),
-									   								   
-											   new VertexData(new float[]{SELECTION_FRAME_SIZE+INNER_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-									   								   
-				   							   new VertexData(new float[]{SELECTION_FRAME_SIZE+INNER_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE+INNER_FRAME_SIZE+scaleFactor*font.getHeight('A'),0.0f,1.0f}, 
-							   						FRAME_COLOR, new float[]{0.0f, 0.0f}),
-									   						
-							   					//TextBox Top Frame
-						   						new VertexData(new float[]{SELECTION_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE+(2*INNER_FRAME_SIZE)+scaleFactor*font.getHeight('A'),0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-																			   
-									   			new VertexData(new float[]{SELECTION_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE+INNER_FRAME_SIZE+scaleFactor*font.getHeight('A'),0.0f,1.0f}, 
-									   				FRAME_COLOR, new float[]{0.0f, 0.0f}),
-											   								   
-												new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE+INNER_FRAME_SIZE+scaleFactor*font.getHeight('A'),0.0f,1.0f}, 
-						   							FRAME_COLOR, new float[]{0.0f, 0.0f}),
-											   								   
-						   						new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE+(2*INNER_FRAME_SIZE)+scaleFactor*font.getHeight('A'),0.0f,1.0f}, 
-									   				FRAME_COLOR, new float[]{0.0f, 0.0f}),
-											   				
-									   			//TextBox Right Frame
-						   					    new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE-INNER_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE+INNER_FRAME_SIZE+scaleFactor*font.getHeight('A'),0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-																		   
-							   				    new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE-INNER_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-							   						FRAME_COLOR, new float[]{0.0f, 0.0f}),
-											   								   
-											    new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-											   								   
-				   							    new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE+INNER_FRAME_SIZE+scaleFactor*font.getHeight('A'),0.0f,1.0f}, 
-							   						FRAME_COLOR, new float[]{0.0f, 0.0f}),
-											   						
-							   					//TextBox Bot Frame
-											    new VertexData(new float[]{SELECTION_FRAME_SIZE,-this.height+INNER_FRAME_SIZE+SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-																					   
-									   		    new VertexData(new float[]{SELECTION_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-													FRAME_COLOR, new float[]{0.0f, 0.0f}),
-												   								   
-											    new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,-this.height+SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-								   					FRAME_COLOR, new float[]{0.0f, 0.0f}),
-													   								   
-								   				new VertexData(new float[]{this.width-SELECTION_FRAME_SIZE,-this.height+INNER_FRAME_SIZE+SELECTION_FRAME_SIZE,0.0f,1.0f}, 
-									   				FRAME_COLOR, new float[]{0.0f, 0.0f}),
+									   				FRAME_COLOR, new float[]{0.0f, 0.0f})
 				   								};
 		
 											   
@@ -301,35 +180,8 @@ public class GLConsole
 				14, 15, 12, //Right Frame
 				
 				16, 17, 18,
-				18, 19, 16, //Bot Frame
+				18, 19, 16 //Bot Frame
 				
-				//*
-				20, 21, 22,
-				22, 23, 20, //Console Left Frame
-				
-				24, 25, 26,
-				26, 27, 24, //Console Top Frame
-				
-				28, 29, 30,
-				30, 31, 28, //Console Right Frame
-				
-				32, 33, 34,
-				34, 35, 32, //Console Bot Frame
-				//*/
-				36, 37, 38,
-				38, 39, 36, //Close Button
-				
-				40, 41, 42,
-				42, 43, 40, //TextBox Left Frame
-				
-				44, 45, 46,
-				46, 47, 44, //TextBox Top Frame
-				
-				48, 49, 50,
-				50, 51, 48, //TextBox Right Frame
-				
-				52, 53, 54,
-				54, 55, 52, //TextBox Bot Frame
 		};
 		
 		setupGL(points, indices);
@@ -433,14 +285,12 @@ public class GLConsole
 			
 			this.shader.unbind();
 			
-			if(this.console.getText().trim().length() != 0)
-				this.console.draw();
 			
 			if(this.textBox.getText().trim().length() != 0)
 				this.textBox.draw();
 			
 			this.title.draw();
-			//this.con.draw();
+			this.con.draw();
 		}
 	}
 	
@@ -471,7 +321,7 @@ public class GLConsole
 	
 	private void write(String text, float[] color) 
 	{
-		this.console.setText(this.console.getText()+text);
+		this.con.setText(this.con.getText()+text);
 	}
 
 	/**
