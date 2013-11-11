@@ -1,24 +1,62 @@
-package cdg.util;
+package cdg.nut.util;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
-import cdg.Entity2D;
+import cdg.nut.util.game.Entity2D;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
 public abstract class Utility 
 {
+	
+	public static HashMap<String, String> loadInfoTxt(String filename)
+	{
+		HashMap<String, String> values = new HashMap<String, String>();
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(filename));
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	    try {
+	        String line = br.readLine();
+
+	        while (line != null) {
+	        	String[] sp = line.split(":");
+	        	values.put(sp[0], sp[1]);
+	            line = br.readLine();
+	        }
+	        
+	    } catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+	        try {
+				br.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	    }
+		return values;
+	}
 	
 	public static final float GL_COLOR_PER_BIT = 0.00390625f;
 	
@@ -210,6 +248,92 @@ public abstract class Utility
 		return texId;
 	}
 	
+	public static int loadBufferdImage(BufferedImage img, int textureUnit)
+	{
+	    ByteBuffer buf = BufferUtils.createByteBuffer(img.getWidth() * img.getHeight() * 4); //4 for RGBA, 3 for RGB
+	    
+	    for(int y = 0; y < img.getHeight(); y++) {
+	    	for(int x = 0; x < img.getWidth(); x++) {
+	    		
+	    		int[] argb = ImageUtils.getARGB(img.getRGB(x, y));
+	            buf.put((byte) argb[1]);    // Red component
+	            buf.put((byte) argb[2]);    // Green component
+	            buf.put((byte) argb[3]);	// Blue component
+	            buf.put((byte) argb[0]);    // Alpha component. Only for RGBA
+	        }
+	    }
+
+	    buf.flip();
+		
+		// Create a new texture object in memory and bind it
+		int texId = GL11.glGenTextures();
+		GL13.glActiveTexture(textureUnit);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
+		
+		// All RGB bytes are aligned to each other and each component is 1 byte
+		GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
+		
+		// Upload the texture data and generate mip maps (for scaling)
+		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, img.getWidth(), img.getHeight(), 0, 
+				GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf);
+		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+		
+		// Setup the ST coordinate system
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+		
+		// Setup what to do when the texture has to be scaled
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, 
+				GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, 
+				GL11.GL_LINEAR);
+		
+		return texId;
+	}
+	
+	public static int loadBufferdImageSmooth(BufferedImage img, int textureUnit)
+	{
+	    ByteBuffer buf = BufferUtils.createByteBuffer(img.getWidth() * img.getHeight() * 4); //4 for RGBA, 3 for RGB
+	    
+	    for(int y = 0; y < img.getHeight(); y++) {
+	    	for(int x = 0; x < img.getWidth(); x++) {
+	    		
+	    		int[] argb = ImageUtils.getARGB(img.getRGB(x, y));
+	            buf.put((byte) argb[1]);    // Red component
+	            buf.put((byte) argb[2]);    // Green component
+	            buf.put((byte) argb[3]);	// Blue component
+	            buf.put((byte) argb[0]);    // Alpha component. Only for RGBA
+	        }
+	    }
+
+	    buf.flip();
+		
+		// Create a new texture object in memory and bind it
+		int texId = GL11.glGenTextures();
+		GL13.glActiveTexture(textureUnit);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
+		
+		// All RGB bytes are aligned to each other and each component is 1 byte
+		GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
+		
+		// Upload the texture data and generate mip maps (for scaling)
+		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, img.getWidth(), img.getHeight(), 0, 
+				GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf);
+		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+		
+		// Setup the ST coordinate system
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+		
+		// Setup what to do when the texture has to be scaled
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, 
+				GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, 
+				GL11.GL_LINEAR_MIPMAP_NEAREST);
+		
+		return texId;
+	}
+	
 	public static void printFloatArray(float[] f)
 	{
 		for(int i = 0; i < f.length; i++)
@@ -292,5 +416,94 @@ public abstract class Utility
 			return true;
 		else
 			return false;
+	}
+
+	public static ArrayList<Integer> filterIds(ByteBuffer pixel) {
+		ArrayList<Integer> ids = new ArrayList<Integer>();
+		//byte[] px = pixel.array();
+		for(int i = 0; i < pixel.limit(); i+=4)
+		{
+			int pId = Utility.glColorToId(new byte[]{pixel.get(i), pixel.get(i+1), pixel.get(i+2), pixel.get(i+3)}, false);
+			if(pId != 0)
+			{
+				ids.add(pId);
+			}
+		}
+		
+		//if(ids.size() == 0)
+		//{
+		//	return null;
+		//}
+		
+		return ids;
+	}
+	
+	public static boolean between(float x, float v1, float v2)
+	{
+		return x >= Math.min(v1, v2) && x <= Math.max(v1, v2);
+	}
+	
+	public static boolean lineLineIntersect2D(Vertex2 p1, Vertex2 p2, Vertex2 p3, Vertex2 p4)
+	{
+		float xDif1 = p1.getX() - p2.getX();
+		float yDif1 = p1.getY() - p2.getY();
+		float xDif2 = p3.getX() - p4.getX();
+		float yDif2 = p3.getY() - p4.getY();
+		
+		if(xDif1 == 0 && xDif2 == 0)
+			return p1.getX() == p3.getX();
+		else if(xDif1 == 0 && xDif2 != 0)
+		{
+			float m2 = yDif2 / xDif2;
+			float n2 = p3.getY() - (m2 * p3.getX());
+			float ty = m2 * p1.getX() + n2;
+			return Utility.between(ty, p1.getY(), p2.getY()) && 
+				   Utility.between(p1.getX(), p3.getX(), p4.getX());
+		}
+		else if(xDif2 == 0 && xDif1 != 0)
+		{
+			float m1 = yDif1 / xDif1;
+			float n1 = p1.getY() - (m1 * p1.getX());
+			float ty = m1 * p3.getX() + n1;
+			return Utility.between(ty, p3.getY(), p4.getY()) && 
+				   Utility.between(p3.getX(), p1.getX(), p2.getX());
+		}
+		else
+		{
+			float m1 = yDif1 / xDif1;
+			float m2 = yDif2 / xDif2;
+			float n1 = p1.getY() - (m1 * p1.getX());
+			float n2 = p3.getY() - (m2 * p3.getX());
+			
+			if(m1 == m2)
+				return n1 == n2;
+			
+			float xCol = (n1-n2)/(m2-m1);
+			//float yCol = m1 * xCol + n1;
+			
+			return Utility.between(xCol, p1.getX(), p2.getX()) && 
+				   Utility.between(xCol, p3.getX(), p4.getX());
+		}
+	}
+	
+	public static boolean lineCircleIntersect2D(Vertex2 p1, Vertex2 p2, Vertex2 m, float r)
+	{
+		Vertex2 p1s = new Vertex2(p1.getX() - m.getX(), p1.getY()-m.getY());
+		Vertex2 p2s = new Vertex2(p2.getX() - m.getX(), p2.getY()-m.getY());
+		
+		float dx = p2s.getX() - p1s.getX();
+		float dy = p2s.getY() - p1s.getY();
+		float dr = (float) Math.sqrt(Math.pow(dx,2)+ Math.pow(dy, 2));
+		float D = (p1s.getX() * p2s.getY()) - (p2s.getX() * p1s.getY());
+		
+		return ((Math.pow(r, 2) * Math.pow(dr, 2))-Math.pow(D, 2)) >= 0;
+	}
+	
+	public static boolean circleCircleIntersect2D(Vertex2 m1, float r1, Vertex2 m2, float r2)
+	{
+		float dx = m2.getX() - m1.getX();
+		float dy = m2.getY() - m1.getY();
+		
+		return Math.sqrt(Math.pow(dx,2)+ Math.pow(dy, 2)) <= (r1 + r2);
 	}
 }

@@ -1,8 +1,8 @@
-package cdg;
+package cdg.nut.util.game;
 
-import cdg.util.Matrix4x4;
-import cdg.util.ShaderProgram;
-import cdg.util.Utility;
+import cdg.nut.util.Matrix4x4;
+import cdg.nut.util.ShaderProgram;
+import cdg.nut.util.Utility;
 
 public abstract class Entity {
 

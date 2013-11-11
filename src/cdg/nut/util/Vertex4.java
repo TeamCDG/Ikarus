@@ -1,4 +1,4 @@
-package cdg.util;
+package cdg.nut.util;
 
 import cdg.interfaces.*;
 
@@ -11,6 +11,10 @@ public class Vertex4 implements IVertex {
 		this.y = y;
 		this.z = z;
 		this.w = w;
+	}
+
+	public Vertex4(Vertex2 vertex2) {
+		this(vertex2.getX(), vertex2.getY(), 0.0f, 1.0f);
 	}
 
 	public float getX() {

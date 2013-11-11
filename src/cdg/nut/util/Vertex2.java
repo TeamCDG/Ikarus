@@ -1,4 +1,4 @@
-package cdg.util;
+package cdg.nut.util;
 
 import cdg.interfaces.*;
 

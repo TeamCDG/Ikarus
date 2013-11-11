@@ -1,4 +1,4 @@
-package cdg.util;
+package cdg.nut.util;
 
 public enum Colors {
 }

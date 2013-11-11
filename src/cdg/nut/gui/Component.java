@@ -1,8 +1,9 @@
-package cdg.util;
+package cdg.nut.gui;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -11,14 +12,31 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
+import cdg.StaticManager;
+import cdg.interfaces.IClickListener;
+import cdg.interfaces.IKeyListener;
 import cdg.interfaces.IMatrix;
+import cdg.interfaces.ISelectListener;
 import cdg.interfaces.IVertex;
+import cdg.nut.util.BitmapFont;
+import cdg.nut.util.Matrix4x4;
+import cdg.nut.util.MatrixTypes;
+import cdg.nut.util.ShaderProgram;
+import cdg.nut.util.Utility;
+import cdg.nut.util.Vertex2;
+import cdg.nut.util.Vertex4;
+import cdg.nut.util.VertexData;
 
 public abstract class Component 
 {
 	public static final float[] DEFAULT_FRAME_COLOR = new float[]{0.9f, 0.9f, 0.9f, 1.0f};
 	public static final float[] DEFAULT_TEXT_COLOR = new float[]{0.9f, 0.9f, 0.9f, 1.0f};
 	public static final float[] DEFAULT_BACKGROUND_COLOR = new float[]{0.2f, 0.2f, 0.2f, 0.9f};
+	
+	public static final float[] DEFAULT_FRAME_H_COLOR = new float[]{1.0f, 0.0f, 0.0f, 1.0f};
+	public static final float[] DEFAULT_TEXT_H_COLOR = new float[]{1.0f, 0.0f, 0.0f, 1.0f};
+	public static final float[] DEFAULT_BACKGROUND_H_COLOR = new float[]{0.2f, 0.2f, 0.2f, 0.9f};
+	
 	public static final float DEFAULT_FRAME_SIZE = 0.01f;
 	public static ShaderProgram DEFAULT_TEXT_SHADER;
 	public static ShaderProgram DEFAULT_MAIN_SHADER;
@@ -28,8 +46,10 @@ public abstract class Component
 	private BitmapFont textFont;
 	private boolean hasText;
 	private String text;
-	private float textOffsetX;
-	private float textOffsetY;
+	private float textOffsetX = 0;
+	private float textOffsetY = 0;
+	private float textWidth;
+	private float textHeight;
 	private ShaderProgram textShader = Component.DEFAULT_TEXT_SHADER;
 	private ShaderProgram mainShader = Component.DEFAULT_MAIN_SHADER;
 	private float[] backgroundColor = Component.DEFAULT_BACKGROUND_COLOR;
@@ -89,14 +109,35 @@ public abstract class Component
 	private Matrix4x4 iconScalingMatrix = Matrix4x4.getIdentity();
 	private Matrix4x4 iconTranslationMatrix = Matrix4x4.getIdentity();
 	
-	public Component(int id, float x, float y, float width, float height)
+	private float[] frameHColor =  Component.DEFAULT_FRAME_H_COLOR;
+	private float[] backgroundHColor = Component.DEFAULT_BACKGROUND_H_COLOR;
+	private float[] textHColor = Component.DEFAULT_TEXT_H_COLOR;
+	
+	private Frame parent;
+	private boolean selectable = false;
+	private float[] textNColor = Component.DEFAULT_TEXT_COLOR;
+	private float[] frameNColor = Component.DEFAULT_FRAME_COLOR;
+	private float[] backgroundNColor = Component.DEFAULT_BACKGROUND_COLOR;
+	
+	public ArrayList<IClickListener> clickListener = new ArrayList<IClickListener>();
+	public ArrayList<ISelectListener> selectListener = new ArrayList<ISelectListener>();
+	public ArrayList<IKeyListener> keyListener = new ArrayList<IKeyListener>();
+	private boolean centerText = true;
+	private int textCursorPos = 0;
+	private boolean clickToSelect = false;
+	private boolean active = false;
+	private boolean scrollable = false;
+	private boolean fixedHeigth;
+	private boolean fixedWidth;
+	
+	
+	public Component(float x, float y, float width, float height)
 	{
-		this(id, x, y, width, height, true, true);
+		this(x, y, width, height, true, true);
 	}
 	
-	public Component(int id, float x, float y, float width, float height, boolean frame, boolean background)
+	public Component(float x, float y, float width, float height, boolean frame, boolean background)
 	{
-		this.id = id;
 		this.setX(x);
 		this.setY(y);
 		this.width = width;
@@ -105,12 +146,10 @@ public abstract class Component
 		this.hasBackground = background;
 		this.hasText = false;
 		this.setupMainGL();
-		this.setupSelectionGL();
 	}
 	
-	public Component(int id, float x, float y, float width, float height, boolean frame, boolean background, BitmapFont font, String text)
+	public Component(float x, float y, float width, float height, boolean frame, boolean background, BitmapFont font, String text)
 	{
-		this.id = id;
 		this.setX(x);
 		this.setY(y);
 		this.width = width;
@@ -132,10 +171,9 @@ public abstract class Component
 									   0.0f, 1.0f, 0.0f, 0.0f, 
 									   0.0f, 0.0f, 1.0f, 0.0f, 
 									   this.x, this.y, 0.0f, 1.0f);
-		this.visibleArea = this.translationMatrix.multiply(new Vertex4(this.textOffsetX+this.textEdgeDistance, this.textOffsetY+this.textEdgeDistance, 
-				this.width/*-this.frameSize-this.textEdgeDistance*/, -this.height/*+this.frameSize+this.textEdgeDistance*/));
+		this.visibleArea =  new Vertex4(this.x+this.textOffsetX+this.textEdgeDistance, this.y + this.textOffsetY+this.textEdgeDistance, 
+				this.width-this.frameSize/*-this.frameSize-this.textEdgeDistance*/, -this.height+this.frameSize/*+this.frameSize+this.textEdgeDistance*/);
 		this.setupMainGL();
-		this.setupSelectionGL();
 		this.setupTextGL();
 	}
 	
@@ -145,10 +183,10 @@ public abstract class Component
 			   new VertexData(new float[]{0.0f,0.0f,0.0f,1.0f}, 
 				   Utility.idToGlColor(this.id, false), new float[]{1.0f, 0.0f}),
 				   
-			   new VertexData(new float[]{0.0f,this.height,0.0f,1.0f}, 
+			   new VertexData(new float[]{0.0f,-this.height,0.0f,1.0f}, 
 				   Utility.idToGlColor(this.id, false), new float[]{1.0f, 1.0f}),
 				   
-			   new VertexData(new float[]{this.width,this.height,0.0f,1.0f}, 
+			   new VertexData(new float[]{this.width,-this.height,0.0f,1.0f}, 
 				   Utility.idToGlColor(this.id, false), new float[]{0.0f, 1.0f}),
 				   
 			   new VertexData(new float[]{this.width,0.0f,0.0f,1.0f}, 
@@ -227,19 +265,19 @@ public abstract class Component
 					yoff += this.textFont.getHeight('A');
 				}
 				textPoints[i*4+0] = new VertexData(new float[]{xoff,-yoff,0.0f,1.0f}, 
-											 textColor,
+											 new float[]{1.0f, 1.0f, 1.0f, 1.0f},
 											 new float[]{this.textFont.getX(c),this.textFont.getY(c)});
 				
 				textPoints[i*4+1] = new VertexData(new float[]{xoff,-yoff-this.textFont.getHeight(c),0.0f,1.0f}, 
-											 textColor,
+											 new float[]{1.0f, 1.0f, 1.0f, 1.0f},
 						 					 new float[]{this.textFont.getX(c),this.textFont.getY(c)+this.textFont.getHeight(c)});
 				
 				textPoints[i*4+2] = new VertexData(new float[]{xoff+this.textFont.getWidth(c),-yoff-this.textFont.getHeight(c),0.0f,1.0f}, 
-											 textColor,
+											 new float[]{1.0f, 1.0f, 1.0f, 1.0f},
 						 					 new float[]{this.textFont.getX(c)+this.textFont.getWidth(c),this.textFont.getY(c)+this.textFont.getHeight(c)});
 				
 				textPoints[i*4+3] = new VertexData(new float[]{xoff+this.textFont.getWidth(c),-yoff,0.0f,1.0f}, 
-											 textColor,
+											 new float[]{1.0f, 1.0f, 1.0f, 1.0f},
 						 					 new float[]{this.textFont.getX(c)+this.textFont.getWidth(c),this.textFont.getY(c)});	
 				/*
 				textPoints[i*4+0] = new VertexData(new float[]{xoff,-yoff,0.0f,1.0f}, 
@@ -315,9 +353,25 @@ public abstract class Component
 			GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL15.GL_STATIC_DRAW);
 			GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 		
-			/*
-			Vertex4 textEdge = (Vertex4) StaticManager.WINDOW_MATRIX.multiply(this.scalingMatrix.multiply((IVertex) new Vertex2(xoffmax, yoff+this.textFont.getHeight('A'))));
-			this.textSize = new Vertex2(textEdge.getX(), textEdge.getY());*/
+			
+			if(this.autosizeWithText)
+			{
+				if(!this.fixedHeigth)
+					this.height = yoff+this.textFont.getStaticHeight()+2*(this.textOffsetY+this.textEdgeDistance);
+				if(!this.fixedWidth)
+					this.width = xoffmax+2*(this.textEdgeDistance)+this.textOffsetX;
+				
+			}
+			
+			this.textWidth = xoffmax-this.textFont.getWidth((char)0);
+			this.textHeight = yoff+this.textFont.getStaticHeight();
+			
+			
+			if(this.autosizeWithText)
+			{
+				this.setupMainGL();
+			}
+			//this.textSize = new Vertex2(textEdge.getX(), textEdge.getY());
 		}
 	}
 	
@@ -326,75 +380,74 @@ public abstract class Component
 		VertexData[] points;
 		byte[] indices;
 		
-		System.out.println(this.hasFrame +"/"+this.hasBackground);
+		
+		points = new VertexData[]{
+				   new VertexData(new float[]{0.0f,0.0f,0.0f,1.0f}, 
+					   new float[]{1.0f, 1.0f, 1.0f, 1.0f}, new float[]{1.0f, 0.0f}),
+					   
+				   new VertexData(new float[]{0.0f,-this.height,0.0f,1.0f}, 
+					   new float[]{1.0f, 1.0f, 1.0f, 1.0f}, new float[]{1.0f, 1.0f}),
+					   
+				   new VertexData(new float[]{this.width,-this.height,0.0f,1.0f}, 
+					   new float[]{1.0f, 1.0f, 1.0f, 1.0f}, new float[]{0.0f, 1.0f}),
+					   
+				   new VertexData(new float[]{this.width,0.0f,0.0f,1.0f}, 
+					   new float[]{1.0f, 1.0f, 1.0f, 1.0f}, new float[]{0.0f, 0.0f}),
+					   
+					   //FRAME LEFT
+				   new VertexData(new float[]{0.0f,0.0f,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{1.0f, 0.0f}),
+							   
+				   new VertexData(new float[]{0.0f,-this.height,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{1.0f, 1.0f}),
+							   
+				   new VertexData(new float[]{this.frameSize,-this.height,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{0.0f, 1.0f}),
+							   
+				   new VertexData(new float[]{this.frameSize,0.0f,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{0.0f, 0.0f}),
+					   
+					   //FRAME TOP
+				   new VertexData(new float[]{0.0f,0.0f,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{1.0f, 0.0f}),
+							   
+				   new VertexData(new float[]{0.0f,-this.frameSize,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{1.0f, 1.0f}),
+							   
+				   new VertexData(new float[]{this.width,-this.frameSize,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{0.0f, 1.0f}),
+							   
+				   new VertexData(new float[]{this.width,0.0f,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{0.0f, 0.0f}),
+							   
+					   //FRAME RIGHT
+				   new VertexData(new float[]{this.width-this.frameSize,0.0f,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{1.0f, 0.0f}),
+									   
+				   new VertexData(new float[]{this.width-this.frameSize,-this.height,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{1.0f, 1.0f}),
+									   
+				   new VertexData(new float[]{this.width,-this.height,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{0.0f, 1.0f}),
+									   
+				   new VertexData(new float[]{this.width,0.0f,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{0.0f, 0.0f}),
+					   
+					 //FRAME BOT
+				   new VertexData(new float[]{0.0f,-this.height+this.frameSize,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{1.0f, 0.0f}),
+										   
+				   new VertexData(new float[]{0.0f,-this.height,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{1.0f, 1.0f}),
+										   
+				   new VertexData(new float[]{this.width,-this.height,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{0.0f, 1.0f}),
+										   
+				   new VertexData(new float[]{this.width,-this.height+this.frameSize,0.0f,1.0f}, 
+					   new float[]{0.0f, 0.0f, 0.0f, 0.0f}, new float[]{0.0f, 0.0f})};
 		
 		if(this.hasFrame && this.hasBackground)
 		{
-			points = new VertexData[]{
-					   new VertexData(new float[]{0.0f,0.0f,0.0f,1.0f}, 
-						   this.backgroundColor, new float[]{1.0f, 0.0f}),
-						   
-					   new VertexData(new float[]{0.0f,-this.height,0.0f,1.0f}, 
-						   this.backgroundColor, new float[]{1.0f, 1.0f}),
-						   
-					   new VertexData(new float[]{this.width,-this.height,0.0f,1.0f}, 
-						   this.backgroundColor, new float[]{0.0f, 1.0f}),
-						   
-					   new VertexData(new float[]{this.width,0.0f,0.0f,1.0f}, 
-						   this.backgroundColor, new float[]{0.0f, 0.0f}),
-						   
-						   //FRAME LEFT
-					   new VertexData(new float[]{0.0f,0.0f,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 0.0f}),
-								   
-					   new VertexData(new float[]{0.0f,-this.height,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 1.0f}),
-								   
-					   new VertexData(new float[]{this.frameSize,-this.height,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 1.0f}),
-								   
-					   new VertexData(new float[]{this.frameSize,0.0f,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 0.0f}),
-						   
-						   //FRAME TOP
-					   new VertexData(new float[]{0.0f,0.0f,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 0.0f}),
-								   
-					   new VertexData(new float[]{0.0f,-this.frameSize,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 1.0f}),
-								   
-					   new VertexData(new float[]{this.width,-this.frameSize,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 1.0f}),
-								   
-					   new VertexData(new float[]{this.width,0.0f,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 0.0f}),
-								   
-						   //FRAME RIGHT
-					   new VertexData(new float[]{this.width-this.frameSize,0.0f,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 0.0f}),
-										   
-					   new VertexData(new float[]{this.width-this.frameSize,-this.height,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 1.0f}),
-										   
-					   new VertexData(new float[]{this.width,-this.height,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 1.0f}),
-										   
-					   new VertexData(new float[]{this.width,0.0f,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 0.0f}),
-						   
-						 //FRAME BOT
-					   new VertexData(new float[]{0.0f,-this.height+this.frameSize,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 0.0f}),
-											   
-					   new VertexData(new float[]{0.0f,-this.height,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 1.0f}),
-											   
-					   new VertexData(new float[]{this.width,-this.height,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 1.0f}),
-											   
-					   new VertexData(new float[]{this.width,-this.height+this.frameSize,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 0.0f})};
-			
 			indices = new byte[]{
 					0, 1, 2,
 					2, 3, 0, //Background
@@ -413,64 +466,8 @@ public abstract class Component
 			};
 		}
 		else if(this.hasFrame && !this.hasBackground)
-		{
-			points = new VertexData[]{
-					   	   //FRAME LEFT
-					   new VertexData(new float[]{0.0f,0.0f,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 0.0f}),
-								   
-					   new VertexData(new float[]{0.0f,-this.height,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 1.0f}),
-								   
-					   new VertexData(new float[]{this.frameSize,-this.height,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 1.0f}),
-								   
-					   new VertexData(new float[]{this.frameSize,0.0f,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 0.0f}),
-						   
-						   //FRAME TOP
-					   new VertexData(new float[]{0.0f,0.0f,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 0.0f}),
-								   
-					   new VertexData(new float[]{0.0f,-this.frameSize,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 1.0f}),
-								   
-					   new VertexData(new float[]{this.width,-this.frameSize,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 1.0f}),
-								   
-					   new VertexData(new float[]{this.width,0.0f,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 0.0f}),
-								   
-						   //FRAME RIGHT
-					   new VertexData(new float[]{this.width-this.frameSize,0.0f,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 0.0f}),
-										   
-					   new VertexData(new float[]{this.width-this.frameSize,-this.height,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 1.0f}),
-										   
-					   new VertexData(new float[]{this.width,-this.height,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 1.0f}),
-										   
-					   new VertexData(new float[]{this.width,0.0f,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 0.0f}),
-						   
-						 //FRAME BOT
-					   new VertexData(new float[]{0.0f,-this.height+this.frameSize,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 0.0f}),
-											   
-					   new VertexData(new float[]{0.0f,-this.height,0.0f,1.0f}, 
-						   this.frameColor, new float[]{1.0f, 1.0f}),
-											   
-					   new VertexData(new float[]{this.width,-this.height,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 1.0f}),
-											   
-					   new VertexData(new float[]{this.width,-this.height+this.frameSize,0.0f,1.0f}, 
-						   this.frameColor, new float[]{0.0f, 0.0f})};
-			
+		{			
 			indices = new byte[]{
-					0, 1, 2,
-					2, 3, 0, //Background
-					
 					4, 5, 6,
 					6, 7, 4, //Left Frame
 					
@@ -478,26 +475,14 @@ public abstract class Component
 					10, 11, 8, //Top Frame
 					
 					12, 13, 14,
-					14, 15, 12
+					14, 15, 12, //Right Frame
+					
+					16, 17, 18,
+					18, 19, 16	//Bot Frame
 			};
-			
-			System.out.println("hasDatFrame");
 		}
 		else if(this.hasBackground && !this.hasFrame)
-		{
-			points = new VertexData[]{
-					   new VertexData(new float[]{0.0f,0.0f,0.0f,1.0f}, 
-						   this.backgroundColor, new float[]{0.0f, 0.0f}),
-						   
-					   new VertexData(new float[]{0.0f,-this.height,0.0f,1.0f}, 
-						   this.backgroundColor, new float[]{0.0f, 0.0f}),
-						   
-					   new VertexData(new float[]{this.width,-this.height,0.0f,1.0f}, 
-						   this.backgroundColor, new float[]{0.0f, 0.0f}),
-						   
-					   new VertexData(new float[]{this.width,0.0f,0.0f,1.0f}, 
-						   this.backgroundColor, new float[]{0.0f, 0.0f})};
-			
+		{			
 			indices = new byte[]{
 					0, 1, 2,
 					2, 3, 0
@@ -691,9 +676,10 @@ public abstract class Component
 		this.textShader.passMatrix(this.textScaleMatrix, MatrixTypes.SCALING);
 		this.textShader.passMatrix(this.textTranslationMatrix, MatrixTypes.TRANSLATION);
 		this.textShader.passMatrix(Matrix4x4.getIdentity()/*rotationMatrix*/, MatrixTypes.ROTATION);
-		this.textShader.passMatrix(StaticManager.WINDOW_MATRIX, MatrixTypes.WINDOW);
+		this.textShader.passMatrix(parent.getWindowMatrix(), MatrixTypes.WINDOW);
 		this.textShader.pass1i("selection", 0);
 		this.textShader.pass4f("visible_Area",this.visibleArea.getX(),this.visibleArea.getY(),this.visibleArea.getZ(),this.visibleArea.getW());
+		this.textShader.pass4f("color", this.textColor[0], this.textColor[1], this.textColor[2], this.textColor[3]);
 		// Draw the vertices
 		GL11.glDrawElements(GL11.GL_TRIANGLES, this.textICount, GL11.GL_UNSIGNED_INT, 0);
 				
@@ -731,7 +717,7 @@ public abstract class Component
 		this.mainShader.passMatrix(this.iconScalingMatrix, MatrixTypes.SCALING);
 		this.mainShader.passMatrix(this.iconTranslationMatrix, MatrixTypes.TRANSLATION);
 		this.mainShader.passMatrix(Matrix4x4.getIdentity()/*rotationMatrix*/, MatrixTypes.ROTATION);
-		this.mainShader.passMatrix(StaticManager.WINDOW_MATRIX, MatrixTypes.WINDOW);
+		this.mainShader.passMatrix(parent.getWindowMatrix(), MatrixTypes.WINDOW);
 		this.mainShader.pass1i("selection", 0);
 		//this.mainShader.pass4f("visible_Area",this.visibleArea.getX(),this.visibleArea.getY(),this.visibleArea.getZ(),this.visibleArea.getW());
 		// Draw the vertices
@@ -773,8 +759,14 @@ public abstract class Component
 		this.mainShader.passMatrix(Matrix4x4.getIdentity()/*scalingMatrix*/, MatrixTypes.SCALING);
 		this.mainShader.passMatrix(this.translationMatrix, MatrixTypes.TRANSLATION);
 		this.mainShader.passMatrix(Matrix4x4.getIdentity()/*rotationMatrix*/, MatrixTypes.ROTATION);
-		this.mainShader.passMatrix(StaticManager.WINDOW_MATRIX, MatrixTypes.WINDOW);
+		this.mainShader.passMatrix(parent.getWindowMatrix(), MatrixTypes.WINDOW);
 		this.mainShader.pass1i("selection", 0);
+		
+		this.mainShader.pass4f("frame_color", this.frameColor[0], this.frameColor[1], 
+									this.frameColor[2], this.frameColor[3]);
+		this.mainShader.pass4f("background_color", this.backgroundColor[0], 
+									this.backgroundColor[1], this.backgroundColor[2], this.backgroundColor[3]);
+		
 		//this.mainShader.pass4f("visible_Area",this.visibleArea.getX(),this.visibleArea.getY(),this.visibleArea.getZ(),this.visibleArea.getW());
 		// Draw the vertices
 		GL11.glDrawElements(GL11.GL_TRIANGLES, this.mainICount, GL11.GL_UNSIGNED_BYTE, 0);
@@ -789,7 +781,7 @@ public abstract class Component
 		this.mainShader.unbind();
 	}
 	
-	public final void draw()
+	public void draw()
 	{
 		if(this.hasBackground || this.hasFrame)
 			this.drawMainGL();
@@ -799,6 +791,26 @@ public abstract class Component
 		
 		if(this.hasText && this.text.trim().length() != 0)
 			this.drawText();
+	}
+	
+	public boolean select(int id)
+	{
+		if(this.id == id)
+		{
+			if(!this.selected)
+				this.selected(); //selected event
+			
+			this.selected = true;
+			return true;
+		}
+		else
+		{
+			if(this.selected)
+				this.unselected(); //unselected event
+			
+			this.selected = false;
+			return false;
+		}
 	}
 
 	public int getIconTexID() {
@@ -916,7 +928,10 @@ public abstract class Component
 	 * @return the text
 	 */
 	public String getText() {
-		return text;
+		if(this.text.length() > 1)
+			return text.substring(0, this.text.length()-1);
+		else
+			return "";
 	}
 	
 	public void resize(float width, float height)
@@ -1021,5 +1036,339 @@ public abstract class Component
 				   				      0.0f, textScale, 		0.0f, 0.0f, 
 				   			          0.0f,      0.0f, textScale, 0.0f, 
 				   			          0.0f, 	 0.0f, 		0.0f, 1.0f);
+		float xdir = ((this.x+this.width-this.frameSize)<this.x+this.textScale*(this.textWidth)-this.frameSize) && !this.autosizeWithText ? this.x+this.width-this.frameSize : this.x+this.textScale*(this.textWidth)-this.frameSize;
+		float ydir = ((this.y+this.height-this.frameSize)<this.y+this.textScale*(this.textHeight)-this.frameSize) && !this.autosizeWithText ? this.y+this.height-this.frameSize : this.y+this.textScale*(this.textHeight)-this.frameSize;
+		
+		this.visibleArea =  new Vertex4(this.x, this.y, xdir, -ydir);
+		if(this.autosizeWithText)
+		{
+			Vertex4 p = this.textScaleMatrix.multiply(new Vertex4(new Vertex2(this.width,this.height)));
+			
+			this.width = p.getX();
+			this.height = p.getY();
+			
+			this.setupMainGL();
+			this.setupSelectionGL();
+			this.setupIconGL();
+		}
+		
+		if(this.width > (this.textWidth*this.textScale) && this.centerText)
+		{
+			this.textOffsetX = (this.width-(this.textWidth*this.textScale)-(2*(this.textEdgeDistance+Component.DEFAULT_FRAME_SIZE)))/2;
+			this.textTranslationMatrix.set(1.0f, 0.0f, 0.0f, 0.0f, 
+										   0.0f, 1.0f, 0.0f, 0.0f, 
+										   0.0f, 0.0f, 1.0f, 0.0f, 
+										   this.x+this.textOffsetX+this.scrollX+this.textEdgeDistance, (this.y-this.textOffsetY-this.scrollY-this.textEdgeDistance), 0.0f, 1.0f);
+			
+		}
+	}
+	
+	public int getId()
+	{
+		return this.id;
+	}
+	
+	public void setId(int newId)
+	{
+		this.id = newId;
+		this.setupSelectionGL();
+	}
+
+	/**
+	 * @return the textColor
+	 */
+	public float[] getTextColor() {
+		return textColor;
+	}
+
+	/**
+	 * @param textColor the textColor to set
+	 */
+	public void setTextColor(float[] textColor) {
+		this.textColor = textColor;
+	}
+
+	/**
+	 * @return the parent
+	 */
+	public Frame getParent() {
+		return parent;
+	}
+
+	/**
+	 * @param parent the parent to set
+	 */
+	public void setParent(Frame parent) {
+		this.parent = parent;
+		
+		this.visibleArea =  parent.getWindowMatrix().multiply(new Vertex4(this.x, this.y, this.x+this.width-this.frameSize, this.y-this.height+this.frameSize));
+		this.visibleArea = new Vertex4(this.x, this.y, this.visibleArea.getZ(), this.visibleArea.getW());
+	}
+	
+	public boolean getAutosizeWithText() {
+		return this.autosizeWithText;
+	}
+
+	/**
+	 * @param parent the parent to set
+	 */
+	public void setAutosizeWithText(boolean value) {
+		this.autosizeWithText = value;
+		
+		if(value)
+		{
+			this.setupTextGL();
+			this.setupSelectionGL();
+			this.setupMainGL();
+			
+			if(this.parent != null)
+			{
+				this.visibleArea =  parent.getWindowMatrix().multiply(new Vertex4(this.x, this.y, this.x+this.width, this.y-this.height));
+				this.visibleArea = new Vertex4(this.x, this.y, this.visibleArea.getZ(), this.visibleArea.getW());
+			}
+		}
+	}
+
+	/**
+	 * @return the selectable
+	 */
+	public boolean isSelectable() {
+		return selectable;
+	}
+
+	/**
+	 * @param selectable the selectable to set
+	 */
+	public void setSelectable(boolean selectable) {
+		this.selectable = selectable;
+	}
+	
+	public void setNormalTextColor(float r, float g, float b, float a)
+	{
+		this.textNColor = new float[]{r,g,b,a};
+	}
+	
+	public void setNormalBackgroundColor(float r, float g, float b, float a)
+	{
+		this.backgroundNColor = new float[]{r,g,b,a};
+	}
+	
+	public void setNormalFrameColor(float r, float g, float b, float a)
+	{
+		this.frameNColor = new float[]{r,g,b,a};
+	}
+	
+	public void setHighlightTextColor(float r, float g, float b, float a)
+	{
+		this.textHColor = new float[]{r,g,b,a};
+	}
+	
+	public void setHighlightBackgroundColor(float r, float g, float b, float a)
+	{
+		this.backgroundHColor = new float[]{r,g,b,a};
+	}
+	
+	public void setHighlightFrameColor(float r, float g, float b, float a)
+	{
+		this.frameHColor = new float[]{r,g,b,a};
+	}
+
+	public float getHeight()
+	{
+		return this.height;
+	}
+	
+	public void setHeight(float height)
+	{
+		this.height = height;
+		if(this.hasText)
+		{
+			if(this.height > this.textHeight && this.centerText)
+			{
+				this.textOffsetY = (this.height-this.textHeight-(2*(this.textEdgeDistance+Component.DEFAULT_FRAME_SIZE)))/2;
+				this.textTranslationMatrix.set(1.0f, 0.0f, 0.0f, 0.0f, 
+											   0.0f, 1.0f, 0.0f, 0.0f, 
+											   0.0f, 0.0f, 1.0f, 0.0f, 
+											   this.x+this.textOffsetX+this.scrollX+this.textEdgeDistance, (this.y-this.textOffsetY-this.scrollY-this.textEdgeDistance), 0.0f, 1.0f);
+				
+			}
+		}
+		
+		this.setupIconGL();
+		this.setupMainGL();
+	}
+	
+	public float getWidth()
+	{
+		return this.height;
+	}
+	
+	public void setWidth(float width)
+	{
+		this.width = width;
+		if(this.hasText)
+		{
+			if(this.width > this.textWidth && this.centerText)
+			{
+				this.textOffsetX = (this.width-(this.textWidth*this.textScale)-(2*(this.textEdgeDistance+Component.DEFAULT_FRAME_SIZE)))/2;
+				this.textTranslationMatrix.set(1.0f, 0.0f, 0.0f, 0.0f, 
+											   0.0f, 1.0f, 0.0f, 0.0f, 
+											   0.0f, 0.0f, 1.0f, 0.0f, 
+											   this.x+this.textOffsetX+this.scrollX+this.textEdgeDistance, (this.y-this.textOffsetY-this.scrollY-this.textEdgeDistance), 0.0f, 1.0f);
+				
+			}
+		}
+		
+		this.setupIconGL();
+		this.setupMainGL();
+	}
+	
+	public void clicked(int x, int y, int button, boolean dMouse) 
+	{
+		if(this.clickToSelect && this.selectable)
+		{
+			//System.out.println("WTF");
+			if(!this.active)
+			{
+				this.textColor = this.textHColor;
+				this.frameColor = this.frameHColor;
+				this.backgroundColor = this.backgroundHColor;
+				this.active = true;
+			}
+		}
+		
+		if(!dMouse)
+		{
+			for(int i = 0; i < this.clickListener.size(); i++)
+			{
+				this.clickListener.get(i).clicked(x, y, button);
+			}
+		}
+		else
+		{
+			
+		}
+	}
+	
+	public void selected() {
+		if(this.selectable && !this.clickToSelect)
+		{
+			this.textColor = this.textHColor;
+			this.frameColor = this.frameHColor;
+			this.backgroundColor = this.backgroundHColor;
+		}
+	}
+	
+	public void unselected() {
+		if(!this.clickToSelect)
+		{
+			this.textColor = this.textNColor;
+			this.frameColor = this.frameNColor;
+			this.backgroundColor = this.backgroundNColor;
+		}
+	}
+	
+	
+	public void keyDown(int key, char c)
+	{
+		for(int i = 0; i < this.keyListener.size(); i++)
+		{
+			this.keyListener.get(i).keyDown(key, c);
+		}
+	}
+	
+	public void addClickListener(IClickListener lis)
+	{
+		this.clickListener.add(lis);
+	}
+	
+	public void removeClickListener(IClickListener lis)
+	{
+		this.clickListener.remove(lis);
+	}
+	
+	public void addSelectListener(ISelectListener lis)
+	{
+		this.selectListener.add(lis);
+	}
+	
+	public void removeSelectListener(ISelectListener lis)
+	{
+		this.selectListener.remove(lis);
+	}
+	
+	public void addKeyListener(IKeyListener lis)
+	{
+		this.keyListener.add(lis);
+	}
+	
+	public void removeKeyListener(IKeyListener lis)
+	{
+		this.keyListener.remove(lis);
+	}
+	
+
+	public boolean getCenterText() {
+		return this.centerText;
+		
+	}
+	
+	public void setCenterText(boolean b) {
+		this.centerText = b;
+		
+	}
+	
+	public int getTextCursorPos()
+	{
+		return this.textCursorPos;
+	}
+	
+	public void setTextCursorPos(int pos)
+	{
+		this.textCursorPos = pos;
+	}
+
+	/**
+	 * @return the clickToSelect
+	 */
+	public boolean isClickToSelect() {
+		return clickToSelect;
+	}
+
+	/**
+	 * @param clickToSelect the clickToSelect to set
+	 */
+	public void setClickToSelect(boolean clickToSelect) {
+		this.clickToSelect = clickToSelect;
+	}
+	
+	public void setActive(boolean active)
+	{
+		if(!this.selectable)
+			return;
+		
+		if(!active)
+		{
+			this.textColor = this.textNColor;
+			this.frameColor = this.frameNColor;
+			this.backgroundColor = this.backgroundNColor;
+		}
+		else
+		{
+			this.textColor = this.textHColor;
+			this.frameColor = this.frameHColor;
+			this.backgroundColor = this.backgroundHColor;
+		}
+		this.active = active;
+	}
+
+	public boolean isScrollable() {
+		// TODO Auto-generated method stub
+		return this.scrollable ;
+	}
+	
+	public void setScrollable(boolean scrollable) {
+		// TODO Auto-generated method stub
+		this.scrollable = scrollable;
 	}
 }

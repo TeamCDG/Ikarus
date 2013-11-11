@@ -1,4 +1,4 @@
-package cdg.util;
+package cdg.nut.util;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -201,6 +201,11 @@ public final class ShaderProgram {
 	 */
 	public int getShaderProgrammId() {
 		return shaderProgrammId;
+	}
+
+	public void pass4f(String string, float[] color) {
+		pass4f(string, color[0], color[1], color[2], color[3]);
+		
 	}
 
 }

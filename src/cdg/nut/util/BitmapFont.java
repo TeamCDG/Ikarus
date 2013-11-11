@@ -1,4 +1,4 @@
-package cdg.util;
+package cdg.nut.util;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -18,6 +18,7 @@ public class BitmapFont
 	private int fontTextureId;
 	private String fontName;
 	private float staticHeight;
+	private float fontSpace = 0.005f;
 	
 	public BitmapFont(String fontInfoFilePath) throws IOException
 	{
@@ -84,7 +85,7 @@ public class BitmapFont
 	
 	public float getWidth(char c)
 	{
-		return getChar(c).getWidth();
+		return getChar(c).getWidth()+fontSpace;
 	}
 	
 	public float getHeight(char c)
