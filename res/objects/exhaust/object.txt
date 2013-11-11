@@ -1,0 +1,6 @@
+name:exhaust
+width:0.1
+heigth:0.1
+base:texture/base.png
+vshader:shader/exhaust.vert
+fshader:shader/exhaust.frag

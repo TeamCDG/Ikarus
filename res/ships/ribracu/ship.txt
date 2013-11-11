@@ -1,0 +1,12 @@
+name:Ri'Bracu
+width:0.8
+height:0.8
+hull:800
+base:texture/base.png
+shield:texture/shield.png
+team:texture/team_stripes.png
+logo:texture/team_logo.png
+decoration:texture/decoration.png
+fshader:shader/ribracu.frag
+vshader:shader/ribracu.vert
+engine:-0.158;-0.32;0.06/0.153;-0.32;0.06
