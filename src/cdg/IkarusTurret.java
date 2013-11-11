@@ -20,11 +20,10 @@ import org.lwjgl.opengl.GL30;
 
 import cdg.interfaces.IEntity;
 import cdg.interfaces.IMatrix;
-import cdg.util.Matrix4x4;
-import cdg.util.StaticManager;
-import cdg.util.Utility;
-import cdg.util.Vertex2;
-import cdg.util.VertexData;
+import cdg.nut.util.Matrix4x4;
+import cdg.nut.util.Utility;
+import cdg.nut.util.Vertex2;
+import cdg.nut.util.VertexData;
 
 public class IkarusTurret implements IEntity {
 

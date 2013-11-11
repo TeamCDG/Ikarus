@@ -1,10 +1,10 @@
 package cdg;
 
-import cdg.util.MatrixTypes;
-import cdg.util.ShaderProgram;
-import cdg.util.StaticManager;
-import cdg.util.Utility;
-import cdg.util.VertexData;
+import cdg.nut.util.MatrixTypes;
+import cdg.nut.util.ShaderProgram;
+import cdg.nut.util.Utility;
+import cdg.nut.util.VertexData;
+import cdg.nut.util.game.Entity2D;
 
 public class Laser extends Entity2D {
 	
@@ -30,12 +30,7 @@ public class Laser extends Entity2D {
 	@Override
 	protected void passShaderVariables() {
 		this.getShader().passMatrix(StaticManager.WINDOW_MATRIX, MatrixTypes.WINDOW);
-
-	}
-
-	@Override
-	public void damage(float amount) {
-		// TODO Auto-generated method stub
+		this.getShader().passMatrix(StaticManager.CAMERA_MATRIX, MatrixTypes.CAMERA);
 
 	}
 
@@ -50,6 +45,12 @@ public class Laser extends Entity2D {
 		this.move(this.moveRate * StaticManager.delta * (float) Math.sin(Utility.degToRad(this.getRotation())), 
 				  this.moveRate * StaticManager.delta * (float) Math.cos(Utility.degToRad(this.getRotation())));
 
+	}
+
+	@Override
+	public void reloadShader() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

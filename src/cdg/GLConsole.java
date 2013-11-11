@@ -12,14 +12,13 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
-import cdg.util.BitmapFont;
-import cdg.util.FrameLabel;
-import cdg.util.MatrixTypes;
-import cdg.util.ShaderProgram;
-import cdg.util.StaticManager;
-import cdg.util.Utility;
-import cdg.util.Vertex4;
-import cdg.util.VertexData;
+import cdg.nut.gui.FrameLabel;
+import cdg.nut.util.BitmapFont;
+import cdg.nut.util.MatrixTypes;
+import cdg.nut.util.ShaderProgram;
+import cdg.nut.util.Utility;
+import cdg.nut.util.Vertex4;
+import cdg.nut.util.VertexData;
 
 public class GLConsole 
 {
@@ -87,7 +86,7 @@ public class GLConsole
 		this.title.scale(0.5f);
 		this.closeTextureID = Utility.loadPNGTextureSmooth("res/icons/close.png", GL13.GL_TEXTURE0);
 		float consoleFrameHeight = -this.height+(3*SELECTION_FRAME_SIZE)+(scaleFactor*font.getHeight('A')+(2*INNER_FRAME_SIZE));
-		this.con = new FrameLabel(7777, SELECTION_FRAME_SIZE, -SELECTION_FRAME_SIZE, this.width - (2*SELECTION_FRAME_SIZE), -consoleFrameHeight, font, "");
+		this.con = new FrameLabel(SELECTION_FRAME_SIZE, -SELECTION_FRAME_SIZE, this.width - (2*SELECTION_FRAME_SIZE), -consoleFrameHeight, font, "");
 		this.con.setVisibleArea(new Vertex4(this.textX,this.textY,this.textVX,this.textVY));
 		this.con.setTextScale(0.5f);
 		this.textBox = new FontObject(this.textX, this.textVY-SELECTION_FRAME_SIZE-(2*INNER_FRAME_SIZE), "blaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", font, this.consoleTextShader);

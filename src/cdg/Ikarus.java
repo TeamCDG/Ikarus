@@ -20,13 +20,12 @@ import org.lwjgl.opengl.GL30;
 import cdg.interfaces.IEntity;
 import cdg.interfaces.IKeyboardListener;
 import cdg.interfaces.IMatrix;
-import cdg.util.Matrix4x4;
-import cdg.util.MusicPlayer;
-import cdg.util.SoundManager;
-import cdg.util.Vertex2;
-import cdg.util.VertexData;
-import cdg.util.StaticManager;
-import cdg.util.Utility;
+import cdg.nut.util.Matrix4x4;
+import cdg.nut.util.MusicPlayer;
+import cdg.nut.util.SoundManager;
+import cdg.nut.util.Utility;
+import cdg.nut.util.Vertex2;
+import cdg.nut.util.VertexData;
 
 public class Ikarus implements IEntity, IKeyboardListener {
 

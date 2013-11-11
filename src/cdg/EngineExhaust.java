@@ -18,12 +18,12 @@ import org.lwjgl.opengl.GL30;
 
 import cdg.interfaces.IEntity;
 import cdg.interfaces.IMatrix;
-import cdg.util.Matrix4x4;
-import cdg.util.MatrixTypes;
-import cdg.util.ShaderProgram;
-import cdg.util.StaticManager;
-import cdg.util.Utility;
-import cdg.util.VertexData;
+import cdg.nut.util.Matrix4x4;
+import cdg.nut.util.MatrixTypes;
+import cdg.nut.util.ShaderProgram;
+import cdg.nut.util.Utility;
+import cdg.nut.util.VertexData;
+import cdg.nut.util.game.Entity2D;
 
 public class EngineExhaust extends Entity2D {
 
@@ -49,14 +49,9 @@ public class EngineExhaust extends Entity2D {
 	}
 
 	@Override
-	public void damage(float f) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
 	protected void passShaderVariables() {
 		this.getShader().passMatrix(StaticManager.WINDOW_MATRIX, MatrixTypes.WINDOW);
+		this.getShader().passMatrix(StaticManager.CAMERA_MATRIX, MatrixTypes.CAMERA);
 		this.getShader().pass2f("seed", r.nextInt(1338), r.nextInt(1338));
 	}
 
@@ -68,6 +63,11 @@ public class EngineExhaust extends Entity2D {
 
 	@Override
 	public void doTick() {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void reloadShader() {
 		// TODO Auto-generated method stub
 		
 	}

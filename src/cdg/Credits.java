@@ -4,9 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import cdg.util.ShaderProgram;
-import cdg.util.StaticManager;
-import cdg.util.Vertex2;
+import cdg.nut.util.ShaderProgram;
+import cdg.nut.util.Vertex2;
 
 public class Credits 
 {

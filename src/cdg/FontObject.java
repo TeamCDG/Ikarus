@@ -12,15 +12,14 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
 import cdg.interfaces.IVertex;
-import cdg.util.BitmapFont;
-import cdg.util.Matrix4x4;
-import cdg.util.MatrixTypes;
-import cdg.util.ShaderProgram;
-import cdg.util.StaticManager;
-import cdg.util.Utility;
-import cdg.util.Vertex2;
-import cdg.util.Vertex4;
-import cdg.util.VertexData;
+import cdg.nut.util.BitmapFont;
+import cdg.nut.util.Matrix4x4;
+import cdg.nut.util.MatrixTypes;
+import cdg.nut.util.ShaderProgram;
+import cdg.nut.util.Utility;
+import cdg.nut.util.Vertex2;
+import cdg.nut.util.Vertex4;
+import cdg.nut.util.VertexData;
 
 public class FontObject {
 

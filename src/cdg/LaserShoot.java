@@ -18,10 +18,10 @@ import org.lwjgl.opengl.GL30;
 
 import cdg.interfaces.IEntity;
 import cdg.interfaces.IMatrix;
-import cdg.util.Matrix4x4;
-import cdg.util.StaticManager;
-import cdg.util.Utility;
-import cdg.util.VertexData;
+import cdg.nut.util.Matrix4x4;
+import cdg.nut.util.Utility;
+import cdg.nut.util.VertexData;
+import cdg.nut.util.game.Entity2D;
 
 public class LaserShoot implements IEntity {
 

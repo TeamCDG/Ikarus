@@ -18,13 +18,13 @@ import org.lwjgl.opengl.GL30;
 
 import cdg.interfaces.IEntity;
 import cdg.interfaces.IMatrix;
-import cdg.util.Matrix4x4;
-import cdg.util.MatrixTypes;
-import cdg.util.ShaderProgram;
-import cdg.util.StaticManager;
-import cdg.util.Utility;
-import cdg.util.Vertex2;
-import cdg.util.VertexData;
+import cdg.nut.util.Matrix4x4;
+import cdg.nut.util.MatrixTypes;
+import cdg.nut.util.ShaderProgram;
+import cdg.nut.util.Utility;
+import cdg.nut.util.Vertex2;
+import cdg.nut.util.VertexData;
+import cdg.nut.util.game.Entity2D;
 
 public class RiBracu extends Entity2D {
 
@@ -59,8 +59,8 @@ public class RiBracu extends Entity2D {
 		super(id, x, y, 0.2f, 0.2f, RiBracu.TEXTURE_ID, RiBracu.SHADER);
 		
 		this.shieldLevel = 1.0f;
-		this.engineLeft = new EngineExhaust(1,-0.04f, -0.08f);
-		this.engineRight = new EngineExhaust(1,0.04f, -0.08f);
+		this.engineLeft = new EngineExhaust(1,-0.04f, -0.095f);
+		this.engineRight = new EngineExhaust(1,0.04f, -0.095f);
 		
 		this.setRotation(0.1f);
 	}
@@ -73,6 +73,7 @@ public class RiBracu extends Entity2D {
 	@Override
 	protected void passShaderVariables() {
 		this.getShader().passMatrix(StaticManager.WINDOW_MATRIX, MatrixTypes.WINDOW);
+		this.getShader().passMatrix(StaticManager.CAMERA_MATRIX, MatrixTypes.CAMERA);
 		this.getShader().passMatrix(this.deathScaleMatrix, "death_Scale_Matrix");
 		this.getShader().pass2f("seed", r.nextInt(1338), r.nextInt(1338));
 		this.getShader().pass1f("shield_Level", this.shieldLevel);
@@ -264,6 +265,12 @@ public class RiBracu extends Entity2D {
 			this.engineLeft.draw();
 			this.engineRight.draw();
 		}
+		
+	}
+
+	@Override
+	public void reloadShader() {
+		// TODO Auto-generated method stub
 		
 	}
 

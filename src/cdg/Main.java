@@ -40,8 +40,19 @@ import static org.lwjgl.opengl.GL15.glBindBuffer;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 
 import cdg.interfaces.IKeyboardListener;
-import cdg.util.*;
+import cdg.nut.util.*;
 import cdg.interfaces.*;
+import cdg.nut.gui.Component;
+import cdg.nut.gui.Frame;
+import cdg.nut.util.BitmapFont;
+import cdg.nut.util.Globals;
+import cdg.nut.util.Matrix4x4;
+import cdg.nut.util.ShaderProgram;
+import cdg.nut.util.Utility;
+import cdg.nut.util.Vertex2;
+import cdg.nut.util.VertexData;
+import cdg.nut.util.game.Entity2D;
+import cdg.nut.util.game.PlanetoidCreator;
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
@@ -63,8 +74,8 @@ public class Main implements IGameControl{
 	private int backgroundVBO = -1;
 	private int backgroundIndiciesVBO = -1;
 	
-	private int roidCount = 1000;
-	private int riBracuCount = 10;
+	private int roidCount = 00;
+	private int riBracuCount = 0;
 	private int gcFrameCount = 0;
 	private Roid[] roids;
 	private RiBracu[] test;
@@ -92,6 +103,11 @@ public class Main implements IGameControl{
 	
 	private boolean debugOverlay = true;
 	private boolean deltaF3 = false;
+	
+	private boolean pause = false;
+	private boolean deltaP = false;
+	
+	private Frame activeFrame;
 
 	
 	@Override
@@ -116,12 +132,37 @@ public class Main implements IGameControl{
 		new Main();
 	}
 	
+	public void setupNonGLGlobals()
+	{
+		Globals.setWindowTitle("Ikarus PreAlpha");
+		Globals.setWindowResolution((1280/10)*9, (720/10)*9);
+		
+	}
+	
+	public void setupGLGlobals()
+	{
+		try {
+			Globals.addFont(new BitmapFont("res\\font\\lcd.txt"));
+			Globals.addFont(new BitmapFont("res\\font\\consolas.txt"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		Globals.setDefaultTextFont("consolas");
+		
+		Globals.addFrame("main", new MainFrame(Globals.getWindowMatrix()));
+		Globals.addFrame("game", new GameFrame(Globals.getWindowMatrix()));
+		
+	}
+	
 	public Main() {
 		// Initialize OpenGL (Display)
+
+		this.setupNonGLGlobals();
 		this.setupOpenGL();
-		
 		this.setupQuad();
 		this.setupShaders();
+		this.setupGLGlobals();
 		
 		
 		
@@ -135,6 +176,20 @@ public class Main implements IGameControl{
 		
 		Roid.SHADER = new ShaderProgram("res/shader/roid.vert", "res/shader/roid.frag");
 		Roid.TEXTURE_ID =  Utility.loadPNGTexture("res/textures/testroid.png", GL13.GL_TEXTURE0);
+		Roid.TEXTURE_ID_2 =  Utility.loadPNGTextureSmooth("res/textures/planetoid.png", GL13.GL_TEXTURE0);
+		
+		Roid.SURFACE_TEXTURE_IDS = new int[5];
+		for(int i = 0; i < 5; i++)
+		{			
+			Roid.SURFACE_TEXTURE_IDS[i] = Utility.loadPNGTextureSmooth("res/textures/roid_surface/roid"+i+".png", GL13.GL_TEXTURE0);
+			System.out.println("ID: "+Roid.SURFACE_TEXTURE_IDS[i]+" | Path: "+"res/textures/roid_surface/roid"+i+".png");
+		}
+		
+		Roid.FORM_TEXTURE_IDS = new int[20];
+		for(int i = 0; i < 1; i++)
+		{
+			Roid.FORM_TEXTURE_IDS[i] = Utility.loadBufferdImageSmooth(PlanetoidCreator.createPlanetoid(256, 100, 125, 12, 0, true, 20, -1, 2), GL13.GL_TEXTURE1);
+		}
 		
 		RiBracu.SHADER = new ShaderProgram("res/shader/ribracu.vert", "res/shader/ribracu.frag");
 		RiBracu.TEXTURE_ID =  Utility.loadPNGTexture("res/textures/ribracu_shield.png", GL13.GL_TEXTURE0);
@@ -150,9 +205,11 @@ public class Main implements IGameControl{
 		Component.DEFAULT_TEXT_SHADER = new ShaderProgram("res/shader/console_text.vert", "res/shader/console_text.frag");
 		Component.DEFAULT_MAIN_SHADER = new ShaderProgram("res/shader/component.vert","res/shader/component.frag");
 		
+		
+		
 		for(int i = 0; i < roidCount; i++)
 		{
-			float roidSize = new Random().nextFloat()*0.2f;
+			float roidSize = new AdvancedRandom().nextInt(10, 20)/100.0f;
 			roids[i] = new Roid(i, ((new Random().nextFloat()-0.5f)*2.0f)*StaticManager.ASPECT_RATIO, (new Random().nextFloat()-0.5f)*2.0f, roidSize, roidSize);
 			//roids[i] = new Roid(i, 0.0f, 0.0f, 0.6f, 0.6f);
 		}
@@ -186,6 +243,14 @@ public class Main implements IGameControl{
 		
 		this.loadCursor();
 		c  = new Credits();
+		
+		this.visibleScreenBounds =  new Vertex2[]{new Vertex2(-1.0f*StaticManager.ASPECT_RATIO, 1.0f),
+				new Vertex2(-1.0f*StaticManager.ASPECT_RATIO, -1.0f),
+				new Vertex2(1.0f*StaticManager.ASPECT_RATIO, -1.0f),
+				new Vertex2(1.0f*StaticManager.ASPECT_RATIO, 1.0f)};
+		
+		StaticManager.ACTIVE_FRAME = new MainFrame(StaticManager.WINDOW_MATRIX);
+		
 		lastFPS = getTime();
 		StaticManager.delta = (float) this.calculateDelta();
 		System.gc();
@@ -195,7 +260,6 @@ public class Main implements IGameControl{
 			this.updateCamera();
 			StaticManager.delta = (float) this.calculateDelta();
 			// Do a single loop (logic/render)
-			this.setVisibleBounds();
 			this.loopCycle();
 			
 			
@@ -270,6 +334,16 @@ public class Main implements IGameControl{
 			this.deltaF3 = false;
 		}
 		
+		if(Keyboard.isKeyDown(Keyboard.KEY_P) && !this.deltaP)
+		{
+			this.pause = !this.pause;
+			this.deltaP = true;
+		}
+		else if(!Keyboard.isKeyDown(Keyboard.KEY_P))
+		{
+			this.deltaP = false;
+		}
+		
 		camScale += Mouse.getDWheel() * 0.001f;
 		
 		if(this.debugOverlay)
@@ -279,14 +353,15 @@ public class Main implements IGameControl{
 				0.0f, camScale, 0.0f, 0.0f, 
 				0.0f, 0.0f, 1.0f, 0.0f, 
 				camX, camY, 0.0f, 1.0f);
-		this.visibleAreaMatrix.set(1.0f*(1.0f/camScale), 0.0f, 0.0f, 0.0f, 
-				0.0f, 1.0f*(1.0f/camScale), 0.0f, 0.0f, 
-				0.0f, 0.0f, 1.0f, 0.0f, 
-				camX, camY, 0.0f, 1.0f);
+
 		StaticManager.VISIBLE_TRANSLATION_MATRIX.set(1.0f, 0.0f, 0.0f, 0.0f, 
 				0.0f, 1.0f, 0.0f, 0.0f, 
 				0.0f, 0.0f, 1.0f, 0.0f, 
 				camX, camY, 0.0f, 1.0f);
+		this.visibleAreaMatrix = StaticManager.VISIBLE_TRANSLATION_MATRIX.multiply(new Matrix4x4((1.0f/camScale), 0.0f, 0.0f, 0.0f, 
+				0.0f, (1.0f/camScale), 0.0f, 0.0f, 
+				0.0f, 0.0f, 1.0f, 0.0f, 
+				0.0f, 0.0f, 0.0f, 1.0f));
 		
 	}
 	
@@ -327,56 +402,18 @@ public class Main implements IGameControl{
 	private void setupOpenGL() {
 		// Setup an OpenGL context with API version 3.2
 		
-		
-		try {
-			
-			
-			
-			DisplayMode[] modes = Display.getAvailableDisplayModes();
-			
-			DisplayMode finalMode = new DisplayMode(StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
-			
-			for (int i=0;i<modes.length;i++) {
-			    DisplayMode current = modes[i];
-			    if(current.getWidth() == StaticManager.WINDOW_WIDTH
-			       && current.getHeight() == StaticManager.WINDOW_HEIGHT
-			       && current.getBitsPerPixel() == 32
-			       && current.getFrequency() == 60)
-			    finalMode = current;
-			}
-			
-			PixelFormat pixelFormat = new PixelFormat();
-			ContextAttribs contextAtrributes = new ContextAttribs(3, 2)
-				.withForwardCompatible(true)
-				.withProfileCore(true);
-			
-			Display.setDisplayMode(finalMode);
-			Display.setTitle(WINDOW_TITLE);
-			Display.create(pixelFormat, contextAtrributes);
-			
-			
-			GL11.glViewport(0, 0, StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
-		} catch (LWJGLException e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
-		
 		// Setup an XNA like background color
-		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
+		GL11.glClearColor(StaticManager.CLEAR_COLOR[0],
+				StaticManager.CLEAR_COLOR[1],
+				StaticManager.CLEAR_COLOR[2],
+				StaticManager.CLEAR_COLOR[3]);
 		
 		// Map the internal OpenGL coordinate system to the entire screen
-		GL11.glViewport(0, 0, StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
+		GL11.glViewport(0, 0, Globals.getWindowWidth(), Globals.getWindowHeight());
 		
 		this.exitOnGLError("setupOpenGL");
 	}
-	
-	private void setVisibleBounds()
-	{
-		this.visibleScreenBounds = new Vertex2[] {this.visibleAreaMatrix.multiply(new Vertex2(-1.0f*StaticManager.ASPECT_RATIO, 1.0f)).toVertex2(),
-				this.visibleAreaMatrix.multiply(new Vertex2(-1.0f*StaticManager.ASPECT_RATIO, -1.0f)).toVertex2(),
-				this.visibleAreaMatrix.multiply(new Vertex2(1.0f*StaticManager.ASPECT_RATIO, -1.0f)).toVertex2(),
-				this.visibleAreaMatrix.multiply(new Vertex2(1.0f*StaticManager.ASPECT_RATIO, 1.0f)).toVertex2()};
-	}
+
 	
 	private void setupQuad() {
 		
@@ -436,6 +473,10 @@ public class Main implements IGameControl{
 	}
 	
 	private void setupShaders() {		
+		
+		Globals.setIdentityShader(new ShaderProgram("res/shader/identity.vert", "res/shader/identity.frag"));
+		Component.DEFAULT_TEXT_SHADER = new ShaderProgram("res/shader/console_text.vert", "res/shader/console_text.frag");
+		Component.DEFAULT_MAIN_SHADER = new ShaderProgram("res/shader/component.vert","res/shader/component.frag");
 		// Load the vertex shader
 		vsId = Utility.loadShader("res\\shader\\background.vert", GL20.GL_VERTEX_SHADER);
 		// Load the fragment shader
@@ -462,9 +503,12 @@ public class Main implements IGameControl{
 	private void loopCycle() {
 		
 		// Render
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		GL11.glEnable(GL11.GL_BLEND);
 		
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		
+		/*
 		GL20.glUseProgram(pId);
 		
 		// Bind the texture
@@ -498,31 +542,44 @@ public class Main implements IGameControl{
 		
 		GL20.glUseProgram(0);
 		
+		
 		GL11.glEnable(GL11.GL_BLEND);
 		
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		
 		int skipped = 0;
 		
-		for(int i = 0; i < roidCount; i++)
+		if(!this.pause)
 		{
-			roids[i].doTick();
+			for(int i = 0; i < roidCount; i++)
+			{
+				roids[i].doTick();
+			}
+			
+			for(int i = 0; i < riBracuCount; i++)
+			{
+				test[i].doTick();
+			}
+			
+			for(int i = 0; i < StaticManager.shoots.size(); i++)
+			{
+				StaticManager.shoots.get(i).doTick();
+			}
 		}
-		
-		for(int i = 0; i < riBracuCount; i++)
-		{
-			test[i].doTick();
-		}
-		
-		for(int i = 0; i < StaticManager.shoots.size(); i++)
-		{
-			StaticManager.shoots.get(i).doTick();
-		}
-		
+		Matrix4x4 tmp = new Matrix4x4(camScale, 0.0f, 0.0f, 0.0f, 
+				0.0f, camScale, 0.0f, 0.0f, 
+				0.0f, 0.0f, 1.0f, 0.0f, 
+				camX, camY, 0.0f, 1.0f);
 		for(int i = 0; i < roidCount; i++)
 		{
 			Entity2D cur = roids[i];
-			if(!Utility.isOutOfVisibleArea(this.visibleScreenBounds, cur.getBounds(), camX, camY))
+			Vertex2[] tmpB = cur.getBounds();
+			Vertex2[] bounds = new Vertex2[]{tmp.multiply(tmpB[0]).toVertex2(),
+					tmp.multiply(tmpB[1]).toVertex2(),
+					tmp.multiply(tmpB[2]).toVertex2(),
+					tmp.multiply(tmpB[3]).toVertex2()};
+			
+			if(!Utility.isOutOfVisibleArea(this.visibleScreenBounds, bounds, camX, camY))
 				cur.draw();
 			else
 				skipped++;
@@ -530,11 +587,12 @@ public class Main implements IGameControl{
 			cur = null;
 			
 		}
-
+	
 		for(int i = 0; i < riBracuCount; i++)
 		{
 			test[i].draw();
 		}
+		/*
 		
 		for(int i = 0; i < StaticManager.shoots.size(); i++)
 		{
@@ -559,7 +617,25 @@ public class Main implements IGameControl{
 			this.skippedFO.draw();
 		}
 		
-		StaticManager.CONSOLE.draw();
+		StaticManager.CONSOLE.draw();*/
+		Globals.getActiveFrame().draw();
+		
+		if(this.playCredits )
+		{
+			c.doTick();
+			c.draw();
+		}
+		
+		if(this.debugOverlay)
+		{
+			this.skippedFO.setText("skipped: "+0);
+			this.fpsFO.draw();
+			this.camXFO.draw();
+			this.camYFO.draw();
+			this.camScaleFO.draw();
+			
+			this.skippedFO.draw();
+		}
 		
 		this.exitOnGLError("loopCycle");
 	}
@@ -606,8 +682,7 @@ public class Main implements IGameControl{
 		int errorValue = GL11.glGetError();
 		
 		if (errorValue != GL11.GL_NO_ERROR) {
-			String errorString = GLU.gluErrorString(errorValue);
-			System.err.println("ERROR - " + errorMessage + ": " + errorString);
+			System.err.println("ERROR - " + errorMessage + ": " + GLU.gluErrorString(errorValue));
 			
 			if (Display.isCreated()) Display.destroy();
 			System.exit(-1);
@@ -619,7 +694,6 @@ public class Main implements IGameControl{
 	public void updateFPS() {
 		if (getTime() - lastFPS > 1000) {
 			//fpsFO.setText("FPS: "+fps+"F");
-			Display.setTitle("FPS: " + fps);
 			fps = 0;
 			lastFPS += 1000;
 		}
@@ -639,379 +713,5 @@ public class Main implements IGameControl{
 		currentTime = 0;
 		return delta;
 	}
-
-	/*
-	private MusicPlayer bg = new MusicPlayer();
-	
-	public static void main(String[] args) {
-		new Main();
-
-	}
-	
-	public Main()
-	{
-		
-		this.initWindow();
-		this.initGL();
-		this.loadCursor();
-		ikarus = new Ikarus(StaticManager.objects.size()+1);
-		StaticManager.objects.add(ikarus);
-		for(int i = 0; i < 10; i++)
-			StaticManager.objects.add(new RiBracu(StaticManager.objects.size()+1));
-		StaticManager.MAIN_MENU_BACKGROUND_TEXTURE_ID = Utility.loadPNGTexture("res\\textures\\background.png", GL13.GL_TEXTURE0);
-		//keyboardListener.add(ikarus);
-		//this.loadMenuSelectionShader();
-		
-		//this.loadTextShader();
-		//this.loadCreditsShader();
-		
-		//StaticManager.FONT_TEXTURE_ID = Utility.loadPNGTexture("res//font//font.png", GL13.GL_TEXTURE0);
-		//StaticManager.SPLASH_TEXTURE_ID = Utility.loadPNGTexture("res//textures//logo.png", GL13.GL_TEXTURE0);
-		//StaticManager.MAIN_MENU_BACKGROUND_TEXTURE_ID = Utility.loadPNGTexture("res//textures//background.png", GL13.GL_TEXTURE0);
-		//setupQuad();
-		this.loadMenuRenderShader();
-		this.setupBackground();
-		this.lastFrame = getTime();
-		bg.open("res\\sound\\background.mp3");
-        bg.play();
-		bg.setGain(100);
-		while (!Display.isCloseRequested()) {
-			
-			StaticManager.delta = (float) this.calculateDelta();
-			double lastFrameTime = getDelta();
-			// Do a single loop (logic/render)
-			this.process();
-			
-			// Force a maximum FPS of about 60
-			Display.sync(60);
-			// Let the CPU synchronize with the GPU if GPU is tagging behind
-			Display.update();
-		}
-		bg.stop();
-		bg = null;
-	}
-	
-	
-	
-	@SuppressWarnings("unused")
-	private void loadCursor()
-	{
-		Image c=Toolkit.getDefaultToolkit().getImage("res\\textures\\cross.png");
-	    BufferedImage biCursor=new BufferedImage(16,16,BufferedImage.TYPE_INT_ARGB);
-	    while(!biCursor.createGraphics().drawImage(c,0,15,15,0,0,0,15,15,null))
-	      try
-	      {
-	        Thread.sleep(5);
-	      }
-	      catch(InterruptedException e)
-	      {
-	      }
-	    
-	    int[] data=biCursor.getRaster().getPixels(0,0,16,16,(int[])null);
-	    
-	    IntBuffer ib=BufferUtils.createIntBuffer(16*16);
-	    for(int i=0;i<data.length;i+=4)
-	      ib.put(data[i] | data[i+1]<<8 | data[i+2]<<16 | data[i+3]<<24);
-	    ib.flip();
-		try {
-			Mouse.setNativeCursor(new Cursor(16, 16, 8, 8, 1, ib, null));
-		} catch (LWJGLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
-	private void process()
-	{
-		GL11.glClearColor(0.0f, 
-				  0.0f,
-				  0.0f, 
-				  1.0f);
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);		
-		
-		Keyboard.poll();
-		Keyboard.enableRepeatEvents(true);		
-		
-		while(Keyboard.next())
-		{
-			for(int i = 0; i < this.keyboardListener.size(); i++)
-			{
-				this.keyboardListener.get(i).keyDown(Keyboard.getEventKey(), Keyboard.getEventCharacter());
-			}
-			
-			this.lastKey = Keyboard.getEventKey();
-		}
-		
-		Mouse.poll();
-		if(Mouse.isButtonDown(0))
-		{
-			for(int i = 0; i < StaticManager.objects.size(); i++)
-				StaticManager.objects.get(i).draw(true);
-			Vertex2 mGL = Utility.mouseTo2DGL(Mouse.getX(), Mouse.getY(), 
-					StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
-			ikarus.shoot(mGL.getX(), mGL.getY());
-		}
-		
-		GL11.glClearColor(StaticManager.CLEAR_COLOR[0], 
-				  StaticManager.CLEAR_COLOR[1],
-				  StaticManager.CLEAR_COLOR[2], 
-				  StaticManager.CLEAR_COLOR[3]);
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);	
-		
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, StaticManager.MAIN_MENU_BACKGROUND_TEXTURE_ID);
-		GL20.glUseProgram(StaticManager.MENU_SHADER_PROGRAM_ID);
-		
-		GL30.glBindVertexArray(this.backgroundVAO);
-		GL20.glEnableVertexAttribArray(0);
-		GL20.glEnableVertexAttribArray(1);
-		GL20.glEnableVertexAttribArray(2);
-		
-		// Bind to the index VBO that has all the information about the order of the vertices
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, this.backgroundIndiciesVBO);
-		
-		FloatBuffer mat = BufferUtils.createFloatBuffer(16);
-		mat.put(new Matrix4x4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f).toArray());
-		mat.flip();
-			
-		
-		GL20.glUniform1i(GL20.glGetUniformLocation(StaticManager.MENU_SHADER_PROGRAM_ID, "texture_font"), 0);
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(StaticManager.MENU_SHADER_PROGRAM_ID, "windowMatrix"), false, mat);		
-		GL20.glUniform1i(GL20.glGetUniformLocation(StaticManager.MENU_SHADER_PROGRAM_ID, "state"), 0);
-		
-		// Draw the vertices
-		GL11.glDrawElements(GL11.GL_TRIANGLES, 6, GL11.GL_UNSIGNED_BYTE, 0);
-		
-		// Put everything back to default (deselect)
-		
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-		GL20.glDisableVertexAttribArray(0);
-		GL20.glDisableVertexAttribArray(1);
-		GL20.glDisableVertexAttribArray(2);
-		GL30.glBindVertexArray(0);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-		
-		for(int i = 0; i < StaticManager.objects.size(); i++)
-			StaticManager.objects.get(i).tick();
-		for(int i = 0; i < StaticManager.shoots.size(); i++)
-			StaticManager.shoots.get(i).tick();
-		
-		for(int i = 0; i < StaticManager.objects.size(); i++)
-			StaticManager.objects.get(i).draw(false);
-		for(int i = 0; i < StaticManager.shoots.size(); i++)
-			StaticManager.shoots.get(i).draw(false);
-		//GL20.glUseProgram(StaticManager.SELECTION_SHADER_PROGRAM_ID);
-		//d.draw();
-		//d2.draw();
-		//GL20.glUseProgram(0);
-		
-		this.exitOnGLError("process");
-	}
-	
-	private void initWindow()
-	{
-		try 
-		{
-			PixelFormat pixelFormat = new PixelFormat();
-			ContextAttribs contextAtrributes = new ContextAttribs(3, 2)
-				.withForwardCompatible(true)
-				.withProfileCore(true);
-			
-			Display.setDisplayMode(new DisplayMode(StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT));
-			Display.setTitle("v0.0.1 - Ikarus Launch!");
-			Display.create(pixelFormat, contextAtrributes);
-			
-			
-		} catch (LWJGLException e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
-	}
-	
-	private void initGL()
-	{
-		GL11.glViewport(0, 0, StaticManager.WINDOW_WIDTH, StaticManager.WINDOW_HEIGHT);
-		GL11.glClearColor(StaticManager.CLEAR_COLOR[0], 
-						  StaticManager.CLEAR_COLOR[1],
-						  StaticManager.CLEAR_COLOR[2], 
-						  StaticManager.CLEAR_COLOR[3]);
-	}
-	
-	private void setupBackground()
-	{
-		if(this.backgroundVAO == -1)
-			this.backgroundVAO = GL30.glGenVertexArrays(); //generate id for VAO
-		if(this.backgroundVBO == -1)
-			this.backgroundVBO = GL15.glGenBuffers(); //generate id for VBO
-		
-		glBindVertexArray(this.backgroundVAO); //bind our VAO
-		glBindBuffer(GL_ARRAY_BUFFER, this.backgroundVBO); //bind our VBO
-		
-		//create our selection frame
-		VertexData[] points = new VertexData[]{new VertexData(new float[]{-1.0f,1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{0.0f,0.0f}),
-											   new VertexData(new float[]{-1.0f,-1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{0.0f,1.0f/StaticManager.ASPECT_RATIO}),
-											   new VertexData(new float[]{1.0f,-1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{1.0f,1.0f/StaticManager.ASPECT_RATIO}),
-											   new VertexData(new float[]{1.0f,1.0f,0.0f,1.0f}, new float[]{1.0f,1.0f,1.0f,1.0f}, new float[]{1.0f,0.0f})};
-		
-		//buffer to store data
-		FloatBuffer f = BufferUtils.createFloatBuffer(points.length * VertexData.ELEMENT_COUNT);
-		for (int i = 0; i < points.length; i++) 
-		{
-			//add position, color and texture floats to the buffer
-			f.put(points[i].getElements());
-		}
-		f.flip();
-		
-		//upload our data
-		GL15.glBufferData(GL_ARRAY_BUFFER, f, GL_STATIC_DRAW);
-		
-		// Put the position coordinates in attribute list 0
-		GL20.glVertexAttribPointer(0, VertexData.POSITION_ELEMENT_COUNT, GL11.GL_FLOAT, 
-				false, VertexData.STRIDE, VertexData.POSITION_BYTE_OFFSET);
-		
-		// Put the color components in attribute list 1
-		GL20.glVertexAttribPointer(1, VertexData.COLOR_ELEMENT_COUNT, GL11.GL_FLOAT, 
-				false, VertexData.STRIDE, VertexData.COLOR_BYTE_OFFSET);
-		
-		// Put the texture coordinates in attribute list 2
-		GL20.glVertexAttribPointer(2, VertexData.TEXTURE_ELEMENT_COUNT, GL11.GL_FLOAT, 
-				false, VertexData.STRIDE, VertexData.TEXTURE_BYTE_OFFSET);
-			
-		//unbind buffer
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-		
-		//buffer for storing indicies
-		ByteBuffer indiciesBuffer = BufferUtils.createByteBuffer(6);
-		indiciesBuffer.put(new byte[]{0, 1, 2, 2, 3, 0}); //put in indicies
-		indiciesBuffer.flip();
-		
-		if(this.backgroundIndiciesVBO == -1)
-			this.backgroundIndiciesVBO = GL15.glGenBuffers(); //generate buffer id for indicies
-		
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, this.backgroundIndiciesVBO); //bind indicies buffer
-		
-		//upload indicies
-		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indiciesBuffer, GL15.GL_STATIC_DRAW);
-		
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0); //unbind buffer
-		
-		GL30.glBindVertexArray(0); //unbind VAO
-	}
-	
-	private void loadCreditsShader()
-	{
-		//load vertex shader
-		int vsId = Utility.loadShader("res\\shader\\creditsVertex.glsl", GL20.GL_VERTEX_SHADER);
-		//load fragment shader
-		int fsId = Utility.loadShader("res\\shader\\creditsFragment.glsl", GL20.GL_FRAGMENT_SHADER);
-		
-		StaticManager.CREDITS_PROGRAM_ID = GL20.glCreateProgram();
-		GL20.glAttachShader(StaticManager.CREDITS_PROGRAM_ID, vsId);
-		GL20.glAttachShader(StaticManager.CREDITS_PROGRAM_ID, fsId);
-		GL20.glLinkProgram(StaticManager.CREDITS_PROGRAM_ID);
-
-		// Position information will be attribute 0
-		GL20.glBindAttribLocation(StaticManager.CREDITS_PROGRAM_ID, 0, "in_Position");
-		// Color information will be attribute 1
-		GL20.glBindAttribLocation(StaticManager.CREDITS_PROGRAM_ID, 1, "in_Color");
-		// Textute information will be attribute 2
-		GL20.glBindAttribLocation(StaticManager.CREDITS_PROGRAM_ID, 2, "in_TextureCoord");
-		
-		GL20.glValidateProgram(StaticManager.CREDITS_PROGRAM_ID);
-	}
-	
-	private void loadMenuRenderShader()
-	{
-		//load vertex shader
-		int vsId = Utility.loadShader("res\\shader\\menuRenderVertex.glsl", GL20.GL_VERTEX_SHADER);
-		//load fragment shader
-		int fsId = Utility.loadShader("res\\shader\\menuRenderFragment.glsl", GL20.GL_FRAGMENT_SHADER);
-		
-		StaticManager.MENU_SHADER_PROGRAM_ID = GL20.glCreateProgram();
-		GL20.glAttachShader(StaticManager.MENU_SHADER_PROGRAM_ID , vsId);
-		GL20.glAttachShader(StaticManager.MENU_SHADER_PROGRAM_ID , fsId);
-		GL20.glLinkProgram(StaticManager.MENU_SHADER_PROGRAM_ID );
-		
-
-		// Position information will be attribute 0
-		GL20.glBindAttribLocation(StaticManager.MENU_SHADER_PROGRAM_ID , 0, "in_Position");
-		// Color information will be attribute 1
-		GL20.glBindAttribLocation(StaticManager.MENU_SHADER_PROGRAM_ID , 1, "in_Color");
-		// Textute information will be attribute 2
-		GL20.glBindAttribLocation(StaticManager.MENU_SHADER_PROGRAM_ID , 2, "in_TextureCoord");
-		
-		GL20.glValidateProgram(StaticManager.MENU_SHADER_PROGRAM_ID );
-		
-	}
-	
-	private void loadTextShader()
-	{
-		//load vertex shader
-		int vsId = Utility.loadShader("res\\shader\\textVertex.glsl", GL20.GL_VERTEX_SHADER);
-		//load fragment shader
-		int fsId = Utility.loadShader("res\\shader\\textFragment.glsl", GL20.GL_FRAGMENT_SHADER);
-		
-		StaticManager.TEXT_SHADER_PROGRAM_ID = GL20.glCreateProgram();
-		GL20.glAttachShader(StaticManager.TEXT_SHADER_PROGRAM_ID , vsId);
-		GL20.glAttachShader(StaticManager.TEXT_SHADER_PROGRAM_ID , fsId);
-		GL20.glLinkProgram(StaticManager.TEXT_SHADER_PROGRAM_ID );
-		
-
-		// Position information will be attribute 0
-		GL20.glBindAttribLocation(StaticManager.TEXT_SHADER_PROGRAM_ID , 0, "in_Position");
-		// Color information will be attribute 1
-		GL20.glBindAttribLocation(StaticManager.TEXT_SHADER_PROGRAM_ID , 1, "in_Color");
-		// Textute information will be attribute 2
-		GL20.glBindAttribLocation(StaticManager.TEXT_SHADER_PROGRAM_ID , 2, "in_TextureCoord");
-		
-		GL20.glValidateProgram(StaticManager.TEXT_SHADER_PROGRAM_ID );
-		
-		StaticManager.FONT_TEXTURE_UNIFORM_ID = GL20.glGetUniformLocation(StaticManager.TEXT_SHADER_PROGRAM_ID, "texture_font");
-		StaticManager.FONT_SCALING_MATRIX_UNIFORM_ID= GL20.glGetUniformLocation(StaticManager.TEXT_SHADER_PROGRAM_ID, "font_scaling_matrix");
-		StaticManager.TEXT_POSITION_UNIFORM_ID = GL20.glGetUniformLocation(StaticManager.TEXT_SHADER_PROGRAM_ID, "position");
-		
-		GL20.glUseProgram(StaticManager.TEXT_SHADER_PROGRAM_ID);
-		FloatBuffer mat = BufferUtils.createFloatBuffer(16);
-		mat.put(StaticManager.WINDOW_MATRIX.toArray());
-		mat.flip();
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(StaticManager.TEXT_SHADER_PROGRAM_ID, "windowMatrix"), false, mat);
-		GL20.glUseProgram(0);
-	}
-	
-	private void exitOnGLError(String errorMessage) 
-	{
-		int errorValue = GL11.glGetError();
-		
-		if (errorValue != GL11.GL_NO_ERROR) {
-			String errorString = GLU.gluErrorString(errorValue);
-			System.err.println("ERROR - " + errorMessage + ": " + errorString);
-			
-			if (Display.isCreated()) Display.destroy();
-			System.exit(-1);
-		}
-	}
-	
-	
-
-	@Override
-	public double getDelta() 
-	{
-		return this.delta;
-	}
-
-	@Override
-	public void showMainMenu() 
-	{		
-		GL11.glClearColor(StaticManager.CLEAR_COLOR[0], 
-				  StaticManager.CLEAR_COLOR[1],
-				  StaticManager.CLEAR_COLOR[2], 
-				  StaticManager.CLEAR_COLOR[3]);
-	}
-
-	@Override
-	public void showCredits() 
-	{
-		
-	}
-	*/
 
 }
