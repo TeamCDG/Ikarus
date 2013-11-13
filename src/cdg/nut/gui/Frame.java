@@ -297,4 +297,9 @@ public abstract class Frame
 	{
 		Globals.setActiveFrame(this);
 	}
+	
+	public void doTick()
+	{
+		
+	}
 }

@@ -186,6 +186,10 @@ public class GameFrame extends Frame{
 		}
 	}
 
-	
+	@Override
+	public void doTick()
+	{
+		this.w.doTick();
+	}
 
 }

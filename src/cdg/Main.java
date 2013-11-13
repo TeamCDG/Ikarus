@@ -618,6 +618,7 @@ public class Main implements IGameControl{
 		}
 		
 		StaticManager.CONSOLE.draw();*/
+		Globals.getActiveFrame().doTick();
 		Globals.getActiveFrame().draw();
 		
 		if(this.playCredits )

@@ -51,4 +51,12 @@ public class World {
 	public List<Entity2D> getObjects() {
 		return this.objects;
 	}
+
+	public void doTick() {
+		for(int i = 0; i < this.objects.size(); i++)
+		{
+			this.objects.get(i).doTick();
+		}
+		
+	}
 }
