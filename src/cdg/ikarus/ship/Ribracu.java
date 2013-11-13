@@ -54,7 +54,7 @@ public class Ribracu extends ShipEntity{
 		this.setShader(Ribracu.SHADER);
 		
 		
-		this.load(id, x, y, values, p);
+		this.load(x, y, values, p);
 	}
 	
 	@Override

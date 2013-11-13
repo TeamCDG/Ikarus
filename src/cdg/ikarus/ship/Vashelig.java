@@ -55,7 +55,7 @@ public class Vashelig extends ShipEntity {
 		this.setDecoration(Vashelig.DECORATION);
 		this.setShader(Vashelig.SHADER);
 		
-		this.load(id, x, y, values, p);
+		this.load(x, y, values, p);
 	}
 	
 	@Override
