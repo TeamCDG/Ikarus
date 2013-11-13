@@ -3,8 +3,10 @@
 + added changable resolution
 + added toggle fullscreen
 + added turret
-+ added laser
+---> + added laser
 + added circular collision detection
++ added circle line collision detection
++ added line line collision detection
 
 0.0.20b -> 09.11.2013
 - changed frame managment
