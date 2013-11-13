@@ -7,8 +7,9 @@ import java.util.Random;
 import org.lwjgl.opengl.GL13;
 
 import cdg.ikarus.objects.Exhaust;
+import cdg.ikarus.objects.Turret;
 import cdg.ikarus.ship.components.Engine;
-import cdg.ikarus.ship.components.Turret;
+import cdg.interfaces.IVertex;
 import cdg.nut.util.GLTexture;
 import cdg.nut.util.Globals;
 import cdg.nut.util.MatrixTypes;
@@ -36,7 +37,7 @@ public abstract class ShipEntity extends Entity2D {
 	private GLTexture base;
 	private GLTexture decoration;
 	
-	private ArrayList<Turret> turrets;
+	private ArrayList<cdg.ikarus.objects.Turret> turrets;
 	private float[] shieldColor = new float[]{0.4f, 1.0f, 0.4f, 1.0f};
 		
 	
@@ -52,7 +53,7 @@ public abstract class ShipEntity extends Entity2D {
 		this.setSelectable(true);
 	}
 	
-	public void load(long id, float x, float y, HashMap<String, String> values, Player p)
+	public void load(float x, float y, HashMap<String, String> values, Player p)
 	{		
 		this.className = values.get("name");
 		this.setWidth(Float.parseFloat(values.get("width")));
@@ -61,6 +62,7 @@ public abstract class ShipEntity extends Entity2D {
 		this.owner = p;
 		this.setX(x);
 		this.setY(y);
+		this.turrets = new ArrayList<Turret>();
 		
 		String[] engineStrings = values.get("engine").split("/");
 		this.exhaust = new Exhaust[engineStrings.length];
@@ -72,6 +74,19 @@ public abstract class ShipEntity extends Entity2D {
 												Float.parseFloat(en[1]), 
 												Float.parseFloat(en[2]), //TODO implement maxSpeedScaling
 												0.18f, this);
+		}
+		
+		
+		if(values.get("turret") != null)
+		{
+			String[] turretStrings = values.get("turret").split("/");
+			for(int i = 0; i < turretStrings.length; i++)
+			{
+				String[] en = turretStrings[i].split(";");
+				float xp = Float.parseFloat(en[0]);
+				float yp = Float.parseFloat(en[1]);
+				this.turrets.add(new Turret(this, xp, yp));
+			}
 		}
 
 		this.initialize();
@@ -118,11 +133,19 @@ public abstract class ShipEntity extends Entity2D {
 		{
 			this.exhaust[i].draw();
 		}
+		for(int i = 0; i < this.turrets.size(); i++)
+		{
+			this.turrets.get(i).draw();
+		}
 		
 	}
 
 	@Override
 	public void doTick() {
+		for(int i = 0; i < this.turrets.size(); i++)
+		{
+			this.turrets.get(i).doTick();
+		}
 	}
 	
 	@Override
@@ -276,6 +299,11 @@ public abstract class ShipEntity extends Entity2D {
 	public void setShieldColor(float[] fs) {
 		this.shieldColor = fs;
 		
+	}
+
+	public Vertex2 getTurretPos(int turretId) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

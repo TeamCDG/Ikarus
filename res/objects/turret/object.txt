@@ -1,0 +1,6 @@
+name:turret
+width:0.1
+height:0.1
+base:texture/base.png
+vshader:shader/turret.vert
+fshader:shader/turret.frag
