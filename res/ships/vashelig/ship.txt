@@ -10,4 +10,4 @@ decoration:texture/decoration.png
 fshader:shader/vashelig.frag
 vshader:shader/vashelig.vert
 engine:0.0;0.0;0.01/0.0;0.0;0.01
-turret:0.0;0.0/0.0;0.0
+turret:0.005;0.7/0.005;-0.5
