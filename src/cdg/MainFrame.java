@@ -25,7 +25,7 @@ public class MainFrame extends Frame
 				Globals.setActiveFrame("game");		
 			}
 		});
-		Button options = new Button(-1.6f, 0.2f, Globals.getDefaultTextFont(), "Options");
+		Button options = new Button(-1.6f, 0.2f, Globals.getDefaultTextFont(), "Change Res");
 		options.setWidth(0.6f);
 		options.setTextScale(2.0f);
 		options.addClickListener(new IClickListener(){

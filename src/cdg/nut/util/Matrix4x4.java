@@ -41,8 +41,11 @@ public class Matrix4x4 implements IMatrix
 	
 	@Override
 	public Vertex4 multiply(IVertex vertex) {
-		return new Vertex4(vertex.getX()*this.matrix[0]+vertex.getY()*this.matrix[1]+vertex.getZ()*this.matrix[2]+vertex.getW()*this.matrix[3], 
-						   vertex.getX()*this.matrix[4]+vertex.getY()*this.matrix[5]+vertex.getZ()*this.matrix[6]+vertex.getW()*this.matrix[7], 
+		float nx = vertex.getX()*this.matrix[0]+vertex.getY()*this.matrix[1]+vertex.getZ()*this.matrix[2]+vertex.getW()*this.matrix[3];
+		float ny = vertex.getX()*this.matrix[4]+vertex.getY()*this.matrix[5]+vertex.getZ()*this.matrix[6]+vertex.getW()*this.matrix[7];
+		//System.out.println(nx+"/"+ny);
+		return new Vertex4(nx, 
+						   ny, 
 						   vertex.getX()*this.matrix[8]+vertex.getY()*this.matrix[9]+vertex.getZ()*this.matrix[10]+vertex.getW()*this.matrix[11], 
 						   vertex.getX()*this.matrix[12]+vertex.getY()*this.matrix[13]+vertex.getZ()*this.matrix[14]+vertex.getW()*this.matrix[15]);
 	}
