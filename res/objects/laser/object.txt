@@ -1,0 +1,8 @@
+name:laser
+width:0.02
+height:0.04
+base:texture/base.png
+vshader:shader/laser.vert
+fshader:shader/laser.frag
+ctype:0
+cradius:0.01
