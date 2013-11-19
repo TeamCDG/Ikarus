@@ -10,6 +10,7 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
+import cdg.World;
 import cdg.nut.util.Globals;
 import cdg.nut.util.Matrix4x4;
 import cdg.nut.util.MatrixTypes;
@@ -55,6 +56,7 @@ public abstract class Entity2D extends Entity {
 	private boolean selectable = false;
 	private boolean selected = false;
 	private boolean focused = false;
+	private World w = null;
 	
 	public Entity2D(long id)
 	{
@@ -66,6 +68,13 @@ public abstract class Entity2D extends Entity {
 		setupGL();
 	}
 	
+	public void initialize(Vertex2 center)
+	{
+		setupGL(center);
+	}
+	
+	
+
 	public Entity2D(long id, float x, float y, float width, float height, ShaderProgram shader) 
 	{
 		super(id);
@@ -138,18 +147,22 @@ public abstract class Entity2D extends Entity {
 	
 	private void setupGL()
 	{
+		this.setupGL(new Vertex2(0.0f, 0.0f));
+	}
+	
+	private void setupGL(Vertex2 center) {
 		setupSelectionSign();
 		
-		VertexData[] points = new VertexData[]{new VertexData(new float[]{-1.0f * (this.getWidth() * 0.5f),this.getHeight() * 0.5f,0.0f,1.0f}, 
+		VertexData[] points = new VertexData[]{new VertexData(new float[]{-1.0f * (this.getWidth() * 0.5f)+center.getX(),this.getHeight() * 0.5f+center.getY(),0.0f,1.0f}, 
 												   Utility.idToGlColor(getId(), false), new float[]{1.0f, 0.0f}),
 												   
-				   							   new VertexData(new float[]{-1.0f * (this.getWidth() * 0.5f),-1.0f * (this.getHeight() * 0.5f),0.0f,1.0f}, 
+				   							   new VertexData(new float[]{-1.0f * (this.getWidth() * 0.5f)+center.getX(),-1.0f * (this.getHeight() * 0.5f)+center.getY(),0.0f,1.0f}, 
 				   								   Utility.idToGlColor(getId(), false), new float[]{1.0f, 1.0f}),
 				   								   
-				   							   new VertexData(new float[]{this.getWidth() * 0.5f,-1.0f * (this.getHeight() * 0.5f),0.0f,1.0f}, 
+				   							   new VertexData(new float[]{this.getWidth() * 0.5f+center.getX(),-1.0f * (this.getHeight() * 0.5f)+center.getY(),0.0f,1.0f}, 
 				   								   Utility.idToGlColor(getId(), false), new float[]{0.0f, 1.0f}),
 				   								   
-				   							   new VertexData(new float[]{this.getWidth() * 0.5f,this.getHeight() * 0.5f,0.0f,1.0f}, 
+				   							   new VertexData(new float[]{this.getWidth() * 0.5f+center.getX(),this.getHeight() * 0.5f+center.getY(),0.0f,1.0f}, 
 				   								   Utility.idToGlColor(getId(), false), new float[]{0.0f, 0.0f})};
 		byte[] indices = {
 				0, 1, 2,
@@ -157,6 +170,7 @@ public abstract class Entity2D extends Entity {
 		};
 		
 		setupGL(points, indices);
+		
 	}
 	
 	public void setupSelectionSign()
@@ -741,4 +755,22 @@ public abstract class Entity2D extends Entity {
 		this.focused = false;
 	}
 
+
+
+	/**
+	 * @return the w
+	 */
+	public World getWorld() {
+		return w;
+	}
+
+	/**
+	 * @param w the w to set
+	 */
+	public void setWorld(World w) {
+		this.w  = w;
+	}
+	
+	public void damage(float value)
+	{}
 }
