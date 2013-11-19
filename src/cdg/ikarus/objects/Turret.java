@@ -1,11 +1,14 @@
 package cdg.ikarus.objects;
 
 import java.util.HashMap;
+import java.util.Random;
 
 import org.lwjgl.opengl.GL13;
 
 import cdg.ikarus.ship.ShipEntity;
 import cdg.nut.util.GLTexture;
+import cdg.nut.util.Globals;
+import cdg.nut.util.MatrixTypes;
 import cdg.nut.util.ShaderProgram;
 import cdg.nut.util.Utility;
 import cdg.nut.util.Vertex2;
@@ -49,7 +52,18 @@ public class Turret extends EntityObject {
 		this.setY(pos.getY());
 		this.initialize();
 	}
-
+	
+	/*
+	@Override
+	public void passShaderVariables()
+	{
+		super.passShaderVariables();
+		this.getShader().passMatrix(Globals.getWindowMatrix(), MatrixTypes.WINDOW);
+		this.getShader().passMatrix(this.getTranslationMatrix(), MatrixTypes.TRANSLATION);
+		this.getShader().passMatrix(this.getRotationMatrix(), MatrixTypes.ROTATION);
+		this.getShader().passMatrix(this.getScalingMatrix(), MatrixTypes.SCALING);
+	}*/
+	
 	@Override
 	public void reloadShader() {
 		// TODO Auto-generated method stub
@@ -58,14 +72,39 @@ public class Turret extends EntityObject {
 
 	@Override
 	public void doTick() {
+		float tmpRot = parent.getRotation();
+		parent.setRotation(tmpRot*(-1));
 		Vertex2 pos = parent.getRotationMatrix().multiply(parent.getTranslationMatrix().multiply(new Vertex2(this.xpos, this.ypos))).toVertex2();
-		this.setX(pos.getX());
-		this.setY(pos.getY());
-		this.addRotation(0.5f);
+		parent.setRotation(tmpRot);
+		//Utility.printFloatArray(this.getTranslationMatrix().toArray());
+		//System.out.println(parent.getRotationMatrix().multiply(new Vertex2(this.xpos, this.ypos)).getX()+"/"+parent.getTranslationMatrix().multiply(new Vertex2(this.xpos, this.ypos)).getY());
+		this.setX(pos.getX()+parent.getX());
+		this.setY(pos.getY()+parent.getY());
+		
+		if(this.target != null)
+		{
+			float dx = this.target.getX() - this.getX();
+			float dy = this.target.getY() - this.getY();
+			float deg = (float)(Math.atan2(dx, dy) * (180/Math.PI));
+			this.setRotation(deg);
+			
+			if(new Random().nextInt(10) == 5)
+			{
+				this.shoot(deg+((new Random().nextFloat()*6)-3));
+			}
+		}
+	}
+
+	private void shoot(float deg) {
+		Laser l = new Laser(parent, this.getX(), this.getY());
+		l.setRotation(deg);
+		
+		//if(this.getWorld() != null)
+			this.parent.getWorld().addObject(l);
 	}
 
 	public void setTarget(Entity2D target)
 	{
-		
+		this.target = target;
 	}
 }
