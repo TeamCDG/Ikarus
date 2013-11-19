@@ -6,6 +6,8 @@ import java.util.Random;
 
 import org.lwjgl.opengl.GL13;
 
+import cdg.StaticManager;
+import cdg.World;
 import cdg.ikarus.objects.Exhaust;
 import cdg.ikarus.objects.Turret;
 import cdg.ikarus.ship.components.Engine;
@@ -24,7 +26,7 @@ public abstract class ShipEntity extends Entity2D {
 	private Engine engine;
 	private Exhaust[] exhaust;
 	private Vertex2 targetPos;
-	private int command;
+	private int command = -1;
 	private Player owner;
 	private float shieldLevel = 1.0f;
 	private float hullPoints;
@@ -39,6 +41,18 @@ public abstract class ShipEntity extends Entity2D {
 	
 	private ArrayList<cdg.ikarus.objects.Turret> turrets;
 	private float[] shieldColor = new float[]{0.4f, 1.0f, 0.4f, 1.0f};
+	private float targetDeg;
+	private float turnRate = 0.048f;
+	private World w = null;
+	private Entity2D target;
+	private float shieldCapacity = 400.0f;
+	private static final float MAX_SHIELD_CAPACITY = 400.0f;
+	private int dir = -1;
+	private float startDir = -1.0f;
+	private float startRot = -1.0f;
+	private Vertex2 startPos;
+	private int minTicks = 20;
+	private float rChange = 0.0f;
 		
 	
 	public ShipEntity(long id, float x, float y, float width, float height,
@@ -88,6 +102,10 @@ public abstract class ShipEntity extends Entity2D {
 				this.turrets.add(new Turret(this, xp, yp));
 			}
 		}
+		
+		this.setCollisionDetectionType(Integer.parseInt(values.get("ctype")));
+		if(this.getCollisionDetectionType() == Entity2D.CDT_CIRCLE)
+			this.setCollisionRadius(Float.parseFloat(values.get("cradius")));
 
 		this.initialize();
 	}
@@ -122,9 +140,16 @@ public abstract class ShipEntity extends Entity2D {
 		this.initialize();
 	}
 
+	@Override
 	public void damage(float amount) {
-		// TODO Auto-generated method stub
+		this.shieldCapacity -= amount;
 		
+		if(this.shieldCapacity < 0)
+		{
+			this.shieldCapacity = 0;			
+		}
+		
+		this.shieldLevel = (1.0f/ShipEntity.MAX_SHIELD_CAPACITY)*this.shieldCapacity;
 	}
 
 	@Override
@@ -145,6 +170,134 @@ public abstract class ShipEntity extends Entity2D {
 		for(int i = 0; i < this.turrets.size(); i++)
 		{
 			this.turrets.get(i).doTick();
+		}
+		
+		if(this.command == Command.MOVE)
+		{
+			
+			
+			if(this.targetPos != null)
+			{
+				this.move(0.0004f * StaticManager.delta * (float) Math.sin(Utility.degToRad(this.getRotation())), 
+						  0.0004f * StaticManager.delta * (float) Math.cos(Utility.degToRad(this.getRotation())));
+				float dx = targetPos.getX() - this.getX();
+				float dy = targetPos.getY() - this.getY();
+				
+				//if(Math.sqrt(dx*dx+dy*dy) <= )
+				
+				this.targetDeg = (float)(Math.atan2(dx, dy) * (180/Math.PI));
+				
+				if(this.targetDeg < 0)
+				{
+					this.targetDeg = 360.0f + this.targetDeg;
+				}
+				
+				if(this.dir == -1)
+				{
+					this.startDir = this.targetDeg;
+					this.startRot = this.getRotation();
+					this.startPos = new Vertex2(this.getX(),this.getY());
+				}
+				
+				/*
+				this.minTicks--;
+				
+				if(this.minTicks <= 0)
+				{
+					float xdif = this.getX() - this.startPos.getX();
+					float ydif = this.getY() - this.startPos.getY();
+					
+					if(Math.sqrt(xdif*xdif + ydif*ydif) <= 0.01f)
+					{
+						if(this.dir == 0)
+						{
+							this.dir = 1;
+						}
+						else if(this.dir == 1)
+						{
+							this.dir = 0;
+						}
+						this.minTicks = 20;
+					}
+				}
+				*/
+				
+				//if((Math.abs(this.targetDeg - this.startDir) <= 0.2f || Math.abs(this.targetDeg - this.startDir) >= 359.8f ) && 
+				//   (Math.abs(this.getRotation() - this.startRot) <= 0.2f || Math.abs(this.getRotation() - this.startRot) >= 359.8f) && this.dir != -1)
+				//{
+				//	if(this.dir == 0)
+				//	{
+				//		this.dir = 1;
+				//	}
+				//	else if(this.dir == 1)
+				//	{
+				//		this.dir = 0;
+				//	}
+				//}
+				
+				if(this.dir != -1 && this.rChange >= 360)
+				{
+					if(this.dir == 0)
+					{
+						this.dir = 1;
+					}
+					else if(this.dir == 1)
+					{
+						this.dir = 0;
+					}
+					
+
+					System.out.println("DIR CHANGE!!!! @"+this.rChange);
+					this.rChange = 0;
+				}
+				
+				if(this.getRotation() < this.targetDeg && this.dir == -1)
+				{
+					this.dir = 0;
+				}
+				else if(this.dir == -1)
+				{
+					this.dir = 1;
+				}
+				
+			
+				
+				if(Math.sqrt((dx*dx) + (dy*dy)) <= 0.05f)
+				{
+					this.setX(targetPos.getX());
+					this.setY(targetPos.getY());
+					this.targetDeg = this.getRotation();
+					this.targetPos = null;
+					this.dir = -1;
+					this.startPos = null;
+					this.minTicks = 20;
+					this.rChange = 0;
+				}
+			}
+			
+			if(this.dir == 0)
+			{
+				this.addRotation(this.turnRate * StaticManager.delta);
+				//System.out.println(Math.round(this.getRotation()*100)/100 +"/"+Math.round(this.targetDeg*100)/100+"/"+Math.abs(this.getRotation() - this.startRot)+"/"+Math.abs(this.targetDeg - this.startDir)+"/"+Math.abs(this.getRotation() - this.targetDeg)+"/"+this.rChange);
+			}
+			else if(this.dir == 1)
+			{
+				this.addRotation(-1.0f * this.turnRate * StaticManager.delta);
+				//System.out.println(Math.round(this.getRotation()*100)/100 +"/"+Math.round(this.targetDeg*100)/100+"/"+Math.abs(this.getRotation() - this.startRot)+"/"+Math.abs(this.targetDeg - this.startDir)+"/"+Math.abs(this.getRotation() - this.targetDeg)+"/"+this.rChange);
+			}
+			
+			if(Math.abs(this.getRotation() - this.targetDeg) <= 1.0f)
+			{
+				this.setRotation(this.targetDeg);
+				this.rChange = 0;
+				
+				if(this.dir != -1)
+					this.dir = 3;
+			}
+			else
+			{
+				this.rChange += this.turnRate * StaticManager.delta;
+			}
 		}
 	}
 	
@@ -194,7 +347,9 @@ public abstract class ShipEntity extends Entity2D {
 	}
 
 	public void setTargetPos(Vertex2 targetPos) {
-		this.targetPos = targetPos;
+		this.targetPos = new Vertex2(targetPos.getX()*Globals.getAspectRatio(), targetPos.getY());
+		this.dir = -1;
+		this.rChange = 0;
 	}
 
 	public int getCommand() {
@@ -304,6 +459,16 @@ public abstract class ShipEntity extends Entity2D {
 	public Vertex2 getTurretPos(int turretId) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	public void setTarget(Entity2D t)
+	{
+		this.target = t;
+	}
+	
+	public Entity2D getTarget()
+	{
+		return this.target;
 	}
 
 }
