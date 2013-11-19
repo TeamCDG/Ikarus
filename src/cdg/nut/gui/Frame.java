@@ -41,6 +41,8 @@ public abstract class Frame
 	private boolean firstFrame = true;
 
 	private String title;
+
+	private boolean mouseRightPressed;
 	
 	public Frame(Matrix4x4 winMat)
 	{
@@ -87,6 +89,15 @@ public abstract class Frame
 		{
 			this.setMouseLeftPressed(false);
 			this.mouseGrabbed = false;
+		}
+		
+		if(Mouse.isButtonDown(MouseButtons.RIGHT))
+		{
+			this.setMouseRightPressed(true);
+		}
+		else if(!Mouse.isButtonDown(MouseButtons.RIGHT))
+		{
+			this.setMouseRightPressed(false);
 		}
 		
 		Keyboard.enableRepeatEvents(true);
@@ -222,6 +233,17 @@ public abstract class Frame
 	 */
 	public void setMouseLeftPressed(boolean mouseLeftPressed) {
 		this.mouseLeftPressed = mouseLeftPressed;
+	}
+	
+	public boolean isMouseRightPressed() {
+		return this.mouseRightPressed;
+	}
+
+	/**
+	 * @param mouseLeftPressed the mouseLeftPressed to set
+	 */
+	public void setMouseRightPressed(boolean mouseRightPressed) {
+		this.mouseRightPressed = mouseRightPressed;
 	}
 	
 	public boolean isMouseGrabbed() {
