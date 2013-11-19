@@ -194,6 +194,10 @@ public abstract class Entity {
 		
 		this.rotation = this.rotation % 360.0f;
 		
+		
+		if(this.rotation < 0)
+			this.rotation = 360.0f + this.rotation;
+		
 		this.rotationMatrix.set((float) Math.cos(Utility.degToRad(this.rotation)), (float) Math.sin(Utility.degToRad(this.rotation))*-1.0f, 0.0f, 0.0f,
 											(float) Math.sin(Utility.degToRad(this.rotation)), 		 (float) Math.cos(Utility.degToRad(this.rotation)), 0.0f, 0.0f,
 																						 0.0f, 													  0.0f, 1.0f, 0.0f,
