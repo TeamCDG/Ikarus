@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL13;
 import cdg.nut.util.GLTexture;
 import cdg.nut.util.ShaderProgram;
 import cdg.nut.util.Utility;
+import cdg.nut.util.game.Entity2D;
 import cdg.nut.util.game.Player;
 
 public class Vashelig extends ShipEntity {
@@ -70,5 +71,15 @@ public class Vashelig extends ShipEntity {
 		
 		Vashelig.SHADER = null;
 		Vashelig.SHADER = p;
+	}
+	
+	@Override
+	public void setTarget(Entity2D t)
+	{
+		super.setTarget(t);
+		for(int i = 0; i < this.getTurrets().size(); i++)
+		{
+			this.getTurrets().get(i).setTarget(t);
+		}
 	}
 }
