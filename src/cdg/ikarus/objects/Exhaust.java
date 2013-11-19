@@ -11,6 +11,7 @@ import cdg.nut.util.Globals;
 import cdg.nut.util.MatrixTypes;
 import cdg.nut.util.ShaderProgram;
 import cdg.nut.util.Utility;
+import cdg.nut.util.Vertex2;
 import cdg.nut.util.game.Entity2D;
 
 public class Exhaust extends EntityObject {
@@ -18,8 +19,6 @@ public class Exhaust extends EntityObject {
 	public static GLTexture BASE;
 	public static ShaderProgram SHADER;
 	public static final String SHIPINFO = "res/objects/exhaust/object.txt";
-	private float yPos;
-	private float xPos;
 
 	private Entity2D parent;
 	
@@ -37,17 +36,13 @@ public class Exhaust extends EntityObject {
 		}
 		
 		this.parent = parent;
-		this.yPos = y;
-		this.xPos = x;
 		
 		System.out.println(BASE.getTextureId());
 		this.setTextureId(Exhaust.BASE.getTextureId());
 		this.setShader(Exhaust.SHADER);
-		this.setX(x);
-		this.setY(y);
 		this.setWidth(width);
 		this.setHeight(height);
-		this.initialize();
+		this.initialize(new Vertex2(x,y));
 	}
 
 	@Override
@@ -65,10 +60,8 @@ public class Exhaust extends EntityObject {
 	
 	@Override
 	protected void passShaderVariables() {
-		this.setX(this.parent.getX()+this.xPos);
-		this.setY(this.parent.getY()+this.yPos);
 		this.getShader().passMatrix(Globals.getWindowMatrix(), MatrixTypes.WINDOW);
-		this.getShader().passMatrix(this.getTranslationMatrix(), MatrixTypes.TRANSLATION);
+		this.getShader().passMatrix(this.parent.getTranslationMatrix(), MatrixTypes.TRANSLATION);
 		this.getShader().passMatrix(this.parent.getRotationMatrix(), MatrixTypes.ROTATION);
 		this.getShader().passMatrix(this.parent.getScalingMatrix(), MatrixTypes.SCALING);
 		this.getShader().pass2f("seed", new Random().nextInt(1338), new Random().nextInt(1338));
@@ -76,7 +69,6 @@ public class Exhaust extends EntityObject {
 
 	@Override
 	public void doTick() {
-		// TODO Auto-generated method stub
 
 	}
 
