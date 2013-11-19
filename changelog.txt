@@ -1,9 +1,10 @@
-0.0.21a -> 12.11.2013
+0.0.21a -> 18.11.2013
 + added engine exhaust
 + added changable resolution
 + added toggle fullscreen
 + added turret
----> + added laser
++ added movemant (basic)
++ added laser
 + added circular collision detection
 + added circle line collision detection
 + added line line collision detection
