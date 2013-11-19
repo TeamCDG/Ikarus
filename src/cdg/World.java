@@ -33,6 +33,7 @@ public class World {
 	
 	public void addObject(Entity2D e)
 	{
+		e.setWorld(this);
 		this.objects.add(e);
 	}
 
@@ -58,5 +59,10 @@ public class World {
 			this.objects.get(i).doTick();
 		}
 		
+	}
+
+	public void removeObject(Entity2D object) {
+		this.objects.remove(object);
+		object.finalize();
 	}
 }
