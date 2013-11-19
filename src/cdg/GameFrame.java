@@ -7,6 +7,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
+import cdg.ikarus.ship.Command;
 import cdg.ikarus.ship.Ribracu;
 import cdg.ikarus.ship.ShipEntity;
 import cdg.ikarus.ship.Vashelig;
@@ -59,11 +60,14 @@ public class GameFrame extends Frame{
 				
 			}});
 		this.add(ex);
-		p = new Player(new float[]{0.0f, 1.0f, 0.0f, 1.0f});
+		p = new Player(new float[]{1.0f, 0.5f, 1.0f, 1.0f});
 		w = new World();
-		w.addObject(new Ribracu(this.getNextId(), -0.8f, 0, p));
+		Ribracu r = new Ribracu(this.getNextId(), -0.8f, 0, p);
+		w.addObject(r);
 		this.setNextId(this.getNextId()+1);
-		w.addObject(new Vashelig(this.getNextId(), 0, 0, p));
+		Vashelig v = new Vashelig(this.getNextId(), 0, 0, p);
+		w.addObject(v);
+		v.setTarget(r);
 		this.setNextId(this.getNextId()+1);
 	}
 	
@@ -74,6 +78,30 @@ public class GameFrame extends Frame{
 		if((this.isMouseLeftPressed() && !this.isMouseGrabbed()) || (this.getDeltaMouseGrabbed() && !this.isMouseGrabbed()))
 		{
 			this.select();
+		}
+		
+		if(this.isMouseRightPressed())
+		{
+			for(int i = 0; i < this.focusedEntities.size(); i++)
+			{
+				if(this.selectedEntities.size() == 0)
+				{
+					
+					try
+					{
+						ShipEntity e = (ShipEntity) this.focusedEntities.get(i);
+						e.setTargetPos(Utility.mouseTo2DGL(Mouse.getX(), 
+														   Mouse.getY(), 
+														   Globals.getWindowWidth(), 
+														   Globals.getWindowHeight()));
+						e.setCommand(Command.MOVE);
+					}
+					catch(Exception e)
+					{
+						
+					}
+				}
+			}
 		}
 		
 		if(Keyboard.isKeyDown(Keyboard.KEY_F5) && !this.dF5)
@@ -184,6 +212,8 @@ public class GameFrame extends Frame{
 			
 			this.selectedComponent = c;
 		}
+		
+		
 	}
 
 	@Override
